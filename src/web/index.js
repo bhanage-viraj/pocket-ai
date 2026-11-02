@@ -115,7 +115,7 @@ export function createWeb({ config = {}, fetchImpl = fetch, search: extra = {} }
     const r = await get(`https://api.frankfurter.dev/v1/latest?from=${q.from}&to=${q.to}`);
     const rate = r.rates?.[q.to];
     if (!rate) return `💱 I don't have a rate for ${q.from} → ${q.to}.`;
-    const fmt = (n, code) => `${new Intl.NumberFormat('en-IN', { maximumFractionDigits: n < 10 ? 4 : 2 }).format(n)} ${code}`;
+    const fmt = (n, code) => `${new Intl.NumberFormat(code === 'INR' ? 'en-IN' : 'en-US', { maximumFractionDigits: n < 10 ? 4 : 2 }).format(n)} ${code}`;
     return `💱 ${fmt(q.amount, q.from)} = *${fmt(q.amount * rate, q.to)}*\n_1 ${q.from} = ${rate} ${q.to} · ECB rate of ${r.date} (Frankfurter)_`;
   }
 
