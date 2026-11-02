@@ -26,7 +26,7 @@ after(() => {
 
 const media = (over = {}) => createMedia({
   config: {
-    dataDir, voiceMaxS: 120, whisperModel: 'm.bin', whisperLang: 'auto', mediaThreads: 2,
+    dataDir, voiceMaxS: 120, whisperModel: path.resolve('package.json'), whisperLang: 'auto', mediaThreads: 2,
     ffmpegBin: path.resolve('test/fixtures/fake-ffmpeg.sh'), whisperBin: path.resolve('test/fixtures/fake-whisper.sh'),
     visionUrl: `http://127.0.0.1:${vision.address().port}`, ...over,
   },
@@ -49,4 +49,9 @@ test('gif: one frame goes to the vision model, description becomes the message',
 test('vision down -> still answers with a plain label', async () => {
   const r = await media({ visionUrl: 'http://127.0.0.1:1' }).toText({ kind: 'sticker', ...blob('x') });
   assert.equal(r.text, '[sent a sticker]');
+});
+
+test('voice before whisper is installed -> MediaUnavailableError (polite reply, not a crash)', async () => {
+  const { MediaUnavailableError } = await import('../src/media/index.js');
+  await assert.rejects(media({ whisperBin: '/nope/whisper-cli' }).toText({ kind: 'voice', ...blob('x') }), MediaUnavailableError);
 });

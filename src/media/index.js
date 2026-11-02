@@ -11,10 +11,14 @@ import { log } from '../util/log.js';
 
 const LABEL = { gif: 'a GIF', sticker: 'a sticker', image: 'a photo' };
 
+/** Thrown when ffmpeg / whisper-cli / the model isn't installed (yet): the router says so politely. */
+export class MediaUnavailableError extends Error {}
+
 function exec(bin, args, timeoutMs) {
   return new Promise((resolve, reject) => {
     execFile(bin, args, { timeout: timeoutMs, maxBuffer: 4 << 20 }, (err, stdout, stderr) => {
-      if (err) reject(Object.assign(err, { stderr: String(stderr).slice(0, 300) }));
+      if (err?.code === 'ENOENT') reject(new MediaUnavailableError(`${bin} not installed`));
+      else if (err) reject(Object.assign(err, { stderr: String(stderr).slice(0, 300) }));
       else resolve(String(stdout));
     });
   });
@@ -31,6 +35,7 @@ export function createMedia({ config }) {
     const wav = tmp('wav');
     fs.writeFileSync(input, buffer);
     try {
+      if (!fs.existsSync(config.whisperModel)) throw new MediaUnavailableError('whisper model not downloaded');
       await exec(config.ffmpegBin, ['-nostdin', '-loglevel', 'error', '-y', '-i', input, '-t', String(config.voiceMaxS),
         '-ar', '16000', '-ac', '1', '-c:a', 'pcm_s16le', wav], 60_000);
       const out = await exec(config.whisperBin, ['-m', config.whisperModel, '-f', wav, '-l', config.whisperLang,

@@ -9,6 +9,7 @@
 import { isAllowedDm, isOwnerNumber } from '../config.js';
 import { checkGroupTrigger } from './triggers.js';
 import { QueueFullError } from './queue.js';
+import { MediaUnavailableError } from '../media/index.js';
 import { log } from '../util/log.js';
 
 /** Quoted message + the user's words, as one prompt. */
@@ -199,6 +200,9 @@ export function createRouter(deps) {
       await reply(await job.done);
     } catch (err) {
       log.error('generation failed:', err.message);
+      if (err instanceof MediaUnavailableError) {
+        return reply('🎤 I can\'t listen to voice notes yet: my speech model is still being set up on the phone. Try again in a bit, or type it.');
+      }
       const timeout = err.name === 'TimeoutError' || err.name === 'AbortError';
       const down = /fetch failed|ECONNREFUSED/.test(err.message + (err.cause?.code || ''));
       await reply(
