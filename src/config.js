@@ -2,6 +2,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 
 const envFile = process.env.POCKET_ENV_FILE || path.resolve('.env');
 if (fs.existsSync(envFile)) process.loadEnvFile(envFile);
@@ -14,6 +15,16 @@ const bool = (v, d) => (v === undefined || v === '' ? d : /^(1|true|yes|on)$/i.t
 const expandHome = (p) => (p ? p.replace(/^~(?=$|\/)/, os.homedir()) : p);
 
 const botName = env.BOT_NAME || 'Pocket';
+
+/** IANA timezone for reminders: TIMEZONE, else TZ, else Android's setting, else what Node thinks. */
+function detectTimezone() {
+  if (env.TIMEZONE || env.TZ) return env.TIMEZONE || env.TZ;
+  try {
+    const tz = execFileSync('getprop', ['persist.sys.timezone'], { encoding: 'utf8', timeout: 2000 }).trim();
+    if (tz) return tz;
+  } catch { /* not Android */ }
+  return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+}
 
 export const config = Object.freeze({
   botName,
@@ -37,7 +48,9 @@ export const config = Object.freeze({
   intentPrefilter: bool(env.INTENT_PREFILTER, true),
 
   historyTurns: int(env.HISTORY_TURNS, 6),
+  timezone: detectTimezone(),
   groupContextLines: int(env.GROUP_CONTEXT_LINES, 12),
+  summaryMaxLines: int(env.SUMMARY_MAX_LINES, 40),
 
   // Mac bridge (Claude Code). Empty URL = /claude and /code are off.
   bridgeUrl: (env.MAC_BRIDGE_URL || '').replace(/\/$/, ''),
@@ -53,6 +66,7 @@ export const config = Object.freeze({
   voiceMaxS: int(env.VOICE_MAX_S, 120),
   visionUrl: (env.VISION_URL || 'http://127.0.0.1:8081').replace(/\/$/, ''),
   mediaThreads: int(env.MEDIA_THREADS, 2),
+  stickerFont: env.STICKER_FONT || '/system/fonts/DroidSans-Bold.ttf',
   rateLimitPerMin: int(env.RATE_LIMIT_PER_MIN, 6),
   queueMax: int(env.QUEUE_MAX, 5),
   maxMessageAgeS: int(env.MAX_MESSAGE_AGE_S, 60),

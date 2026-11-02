@@ -211,7 +211,16 @@ export function createWhatsAppGateway({ config, onMessage }) {
     const repliesToBot = await isSelfAsync(current, contextInfo?.participant);
     const q = contextInfo?.quotedMessage ? normalizeMessageContent(contextInfo.quotedMessage) : null;
     const quotedText = (q?.conversation || q?.extendedTextMessage?.text || q?.imageMessage?.caption || '').trim();
-    const quoted = quotedText && !repliesToBot ? { text: quotedText, id: contextInfo.stanzaId ?? null } : null;
+    // media in the quoted message (reply "sticker" to a photo) — a fake WAMessage is enough to download it
+    const quotedMedia = q
+      ? mediaOf(current, {
+          key: { remoteJid: chatId, id: contextInfo.stanzaId, participant: contextInfo.participant, fromMe: repliesToBot },
+          message: contextInfo.quotedMessage,
+        }, q)
+      : null;
+    const quoted = (quotedText && !repliesToBot) || quotedMedia
+      ? { text: repliesToBot ? '' : quotedText, id: contextInfo.stanzaId ?? null, media: quotedMedia }
+      : null;
     if (mentioned.length) log.debug(`mentions: ${mentioned.map((j) => j.split('@')[1]).join(', ')} -> bot=${mentionsBot}`);
 
     // remove "@<bot>" tokens from the text
@@ -245,8 +254,11 @@ export function createWhatsAppGateway({ config, onMessage }) {
     async reply(msg, text) {
       return sock.sendMessage(msg.chatId, { text }, { quoted: msg.raw });
     },
-    async sendText(chatId, text) {
-      return sock.sendMessage(chatId, { text });
+    async sendText(chatId, text, { mentions } = {}) {
+      return sock.sendMessage(chatId, { text, ...(mentions && { mentions }) });
+    },
+    async sendSticker(msg, webp) {
+      return sock.sendMessage(msg.chatId, { sticker: webp }, { quoted: msg.raw });
     },
     /** Edit a message the bot sent (used for streaming replies later). */
     async editText(chatId, key, text) {

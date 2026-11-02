@@ -6,7 +6,7 @@ const KEYWORDS =
 export default {
   name: 'save_note',
   description:
-    'User tells you a fact, idea or todo to note down / remember / jot ("note:", "remember that", "yaad rakhna", "todo"). No link.',
+    'User tells you a fact, idea or todo to note down / remember / jot ("note:", "remember that", "yaad rakhna", "todo"). No link, and no time to be reminded at (that is set_reminder).',
   fields: {
     note: {
       type: 'string',

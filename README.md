@@ -127,11 +127,20 @@ npm test                    # 25 unit tests, no model needed
 | `/stats` | tok/s, latency, cache hit, RAM, battery temp, uptime |
 | `/ping` | Health check |
 | `/me` | What it knows about you |
+| `/reminders` | Upcoming reminders in this chat (`/reminders cancel <id>`) |
+| `/summary` | Group TL;DR of what you missed (or `@Pocket tldr`) |
+| `/sticker` | How to make stickers |
 | `/claude <question>` | Ask Claude via the Mac bridge (works in groups without tagging) |
 | `/code [project:] <task>` | 🔒 Claude Code works on a new branch on the Mac and reports back |
 | `/reset` | Forget this chat's history and group context |
 
 **Memory and context.** Each chat keeps its last `HISTORY_TURNS` exchanges. In groups the bot also reads along: when someone addresses it, it sees the group messages since its last reply (`GROUP_CONTEXT_LINES`, default 12), so "@Pocket what do you think?" works. It knows who is talking, and what each person asked it to remember (`remember that …`). Those facts follow you across chats, with one rule: in a DM it sees everything you saved, while in a group it only sees what was saved in that group. All of this stays in SQLite on the phone.
+
+## Stickers, reminders, group summaries
+
+- 🎨 **Sticker maker:** send a photo or GIF with a caption like `sticker`, `sticker with text "Monday mood"` or `round sticker, upar likho chai time in yellow`, or reply to one with `isko sticker bana do`. The model turns the prompt into a spec (text, position, colour, square/circle/rounded), with a plain-code fallback, and ffmpeg renders a 512×512 WebP. **GIFs become animated stickers.** In groups the caption has to start with "sticker", be a reply to a photo asking to make one, or tag the bot.
+- ⏰ **Reminders:** `remind me tomorrow 9am to call mom` or `kal shaam 6 baje yaad dilana …`. The model extracts *what* and the *time phrase*, and plain code (`src/util/when.js`) parses English and Hinglish times in `TIMEZONE`, which defaults to the phone's setting. Reminders are stored in SQLite, survive restarts, and @mention the person in groups.
+- 📝 **Group summary:** `/summary` or `@Pocket tldr` summarises the messages since *your* last one in that group (up to `SUMMARY_MAX_LINES`), on the phone.
 
 ## Voice notes and GIFs
 

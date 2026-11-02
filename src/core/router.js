@@ -10,7 +10,26 @@ import { isAllowedDm, isOwnerNumber } from '../config.js';
 import { checkGroupTrigger } from './triggers.js';
 import { QueueFullError } from './queue.js';
 import { MediaUnavailableError } from '../media/index.js';
+import { STICKER_RE } from '../stickers/index.js';
 import { log } from '../util/log.js';
+
+const STICKABLE = new Set(['image', 'gif', 'sticker']);
+/**
+ * "Make a sticker" request? A photo/GIF/sticker with "sticker …" in the caption, or a reply to one.
+ * DMs: "sticker" anywhere. Groups: caption starts with "sticker" / "/sticker", or the bot is tagged.
+ * @returns {{media: object, prompt: string}|null}
+ */
+export function stickerRequest(msg) {
+  const text = (msg.text || '').trim();
+  if (!STICKER_RE.test(text)) return null;
+  const media = STICKABLE.has(msg.media?.kind) ? msg.media : STICKABLE.has(msg.quoted?.media?.kind) ? msg.quoted.media : null;
+  if (!media) return null;
+  // Groups: tagged, or starts with "sticker", or a reply to the photo that clearly asks to make one
+  // ("isko sticker bana do", "make a sticker of this") — but not "nice sticker lol".
+  const asks = /\b(make|create|convert|turn|bana|banao|banado|bana do|banade|chahiye|de do|dedo)\b/i.test(text);
+  if (msg.isGroup && !msg.mentionsBot && !/^\/?(sticker|stiker)\b/i.test(text) && !(media === msg.quoted?.media && asks)) return null;
+  return { media, prompt: text.replace(/^\/(sticker|stiker)\b\s*/i, '') || 'sticker' };
+}
 
 /** Quoted message + the user's words, as one prompt. */
 export function quoteBlock(quoted, text) {
@@ -60,10 +79,13 @@ function decideNow(msg, { config, commands }) {
     });
     if (!t.triggered) return { action: 'ignore', reason: t.reason };
     text = t.text;
+    if (/^(tl;?dr|summary|summarize|summarise|what did i miss|kya miss kiya)\b[?!. ]*$/i.test(text)) {
+      return { action: 'command', name: 'summary', args: [], argText: '', isOwner };
+    }
     // "@Pocket" as a reply to someone's message = answer that message
-    if (!text && msg.quoted) return { action: 'ai', text: quoteBlock(msg.quoted.text, ''), isOwner };
+    if (!text && msg.quoted?.text) return { action: 'ai', text: quoteBlock(msg.quoted.text, ''), isOwner };
     if (!text) return { action: 'command', name: 'help', args: [], argText: '', isOwner };
-    if (msg.quoted && !parseCommand(text)) return { action: 'ai', text: quoteBlock(msg.quoted.text, text), isOwner };
+    if (msg.quoted?.text && !parseCommand(text)) return { action: 'ai', text: quoteBlock(msg.quoted.text, text), isOwner };
   } else {
     if (!isAllowedDm(msg.sender.number)) return { action: 'ignore', reason: 'dm-not-allowed' };
     // "/ai question" also works in DMs
@@ -82,7 +104,7 @@ function decideNow(msg, { config, commands }) {
 }
 
 export function createRouter(deps) {
-  const { config, commands, tasks, detector, chat, memory, context, media, queue, limiter, metrics, io, db, llm } = deps;
+  const { config, commands, tasks, detector, chat, memory, context, media, stickers, queue, limiter, metrics, io, db, llm } = deps;
   const taskByName = new Map(tasks.map((t) => [t.name, t]));
 
   async function handle(msg) {
@@ -91,6 +113,8 @@ export function createRouter(deps) {
     } catch (err) {
       log.warn('context observe failed:', err.message);
     }
+    const st = stickers && stickerRequest(msg);
+    if (st && (msg.isGroup || isAllowedDm(msg.sender.number)) && !msg.stale) return handleSticker(msg, st);
     if (msg.media && !msg.text) return handleMedia(msg);
     const d = decide(msg, { config, commands });
     if (d.action === 'ignore') {
@@ -119,6 +143,31 @@ export function createRouter(deps) {
       await reply('⚠️ Something went wrong on my side. Try again?').catch(() => {});
     }
     return d;
+  }
+
+  async function handleSticker(msg, { media: m, prompt }) {
+    const isOwner = isOwnerNumber(msg.sender.number);
+    const reply = (t) => io.reply(msg, t);
+    log.info(`→ ${msg.isGroup ? 'group' : 'dm'} ${msg.sender.name} [sticker from ${m.kind}] ${prompt.slice(0, 60)}`);
+    if (!isOwner && !limiter.take(msg.sender.jid)) return { action: 'ignore', reason: 'rate' };
+    metrics.countMessage();
+    try {
+      const job = queue.push(async () => {
+        const t0 = performance.now();
+        const { webp, spec } = await stickers.make(await m.download(), m.kind, prompt);
+        log.info(`  sticker ${JSON.stringify(spec)} ${Math.round(webp.length / 1024)}KB ${Math.round(performance.now() - t0)}ms`);
+        return webp;
+      });
+      await io.sendSticker(msg, await job.done);
+    } catch (err) {
+      if (err instanceof QueueFullError) await reply('🥵 I\'m busy right now, try again in a minute.');
+      else if (err instanceof MediaUnavailableError) await reply('🎨 Sticker maker is still being set up on my phone. Try again in a bit.');
+      else {
+        log.error('sticker failed:', err.message);
+        await reply('⚠️ Couldn\'t make that sticker. Try a different photo or a simpler prompt.');
+      }
+    }
+    return { action: 'sticker' };
   }
 
   /** Voice note / GIF / sticker / photo with no caption. Only processed when it's meant for the bot. */

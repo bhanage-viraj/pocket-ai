@@ -8,7 +8,7 @@
 //
 // Privacy rule for remembered facts: in a DM you see everything that person saved anywhere;
 // in a group only what was saved in that same group. A DM note never leaks into a group.
-const KEEP_LINES = 50; // per group, on disk
+const KEEP_LINES = 120; // per group, on disk (context uses the last few, /summary up to SUMMARY_MAX_LINES)
 
 export function createContext(db, { groupLines = 12, factsPerPerson = 5, lineChars = 200 } = {}) {
   db.exec(`
@@ -44,6 +44,8 @@ export function createContext(db, { groupLines = 12, factsPerPerson = 5, lineCha
   );
   const clearLines = db.prepare('DELETE FROM chat_log WHERE chat_id = ?');
   const getPerson = db.prepare('SELECT * FROM people WHERE number = ?');
+  const lastOwnLine = db.prepare('SELECT MAX(id) AS id FROM chat_log WHERE chat_id = ? AND sender = ? AND (msg_id IS NULL OR msg_id != ?)');
+  const linesAfter = db.prepare('SELECT name, text, ts FROM chat_log WHERE chat_id = ? AND id > ? AND (msg_id IS NULL OR msg_id != ?) ORDER BY id DESC LIMIT ?');
 
   const hasNotes = () => !!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='notes'").get();
   function factsFor(number, { chatId, isGroup }) {
@@ -91,6 +93,21 @@ export function createContext(db, { groupLines = 12, factsPerPerson = 5, lineCha
       }
 
       return parts.join('\n');
+    },
+
+    /**
+     * Group messages for /summary: everything since `number` last spoke ("what did I miss"),
+     * or the last `max` lines if that's too little. Excludes the /summary message itself.
+     */
+    transcript(chatId, { number, max = 40, min = 8, excludeId = '' } = {}) {
+      const since = number ? lastOwnLine.get(chatId, number, excludeId)?.id ?? 0 : 0;
+      let rows = linesAfter.all(chatId, since, excludeId, max);
+      let missed = since > 0;
+      if (rows.length < min) {
+        rows = linesAfter.all(chatId, 0, excludeId, max);
+        missed = false;
+      }
+      return { lines: rows.reverse().map((r) => ({ name: r.name || 'Someone', text: clip(r.text), ts: r.ts })), missed };
     },
 
     person(number) {

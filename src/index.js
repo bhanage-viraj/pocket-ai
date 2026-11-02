@@ -10,7 +10,9 @@ import { createChat } from './core/chat.js';
 import { createMemory } from './core/memory.js';
 import { createContext } from './core/context.js';
 import { createBridge } from './core/bridge.js';
+import { createReminderScheduler } from './core/reminders.js';
 import { createMedia } from './media/index.js';
+import { createStickerMaker } from './stickers/index.js';
 import { createQueue } from './core/queue.js';
 import { createRateLimiter } from './core/ratelimit.js';
 import { createMetrics } from './core/metrics.js';
@@ -48,6 +50,7 @@ async function main() {
     io: gateway.io,
     bridge,
     media: config.media ? createMedia({ config }) : null,
+    stickers: config.media ? createStickerMaker({ config, llm }) : null,
   });
 
   if (await llm.health()) {
@@ -67,6 +70,8 @@ async function main() {
 
   await gateway.connect();
   bridge.start();
+  createReminderScheduler({ db, io: gateway.io }).start();
+  log.info(`⏰ Reminders on (timezone ${config.timezone})`);
   log.info(bridge.enabled ? `🌉 Mac bridge: ${config.bridgeUrl}` : '🌉 Mac bridge off (set MAC_BRIDGE_URL and BRIDGE_TOKEN for /claude and /code)');
 
   const shutdown = (sig) => {

@@ -141,7 +141,7 @@ test('a stale group message still lands in the context', async () => {
   const h = harness();
   await h.router.handle(group('missed while offline', { id: 'old', stale: true }));
   assert.equal(h.replies.length, 0);
-  await h.router.handle(group('what did I miss?', { id: 'new', mentionsBot: true }));
+  await h.router.handle(group('so what do you think?', { id: 'new', mentionsBot: true }));
   assert.match(h.contexts[0], /missed while offline/);
 });
 
@@ -171,4 +171,10 @@ test('GIF: answered in DMs and when replying to the bot; ignored in group chatte
   assert.equal(h.replies[0], 'echo: [Rahul]: [sent a GIF showing: a dancing cat]');
   await h.router.handle(msg({ text: '', media: gif, sender: { jid: 's', number: '919833333333', name: 'S' } }));
   assert.equal(h.replies.length, 1, 'strangers still ignored in DMs');
+});
+
+test('"@Pocket tldr" / "what did I miss" in a group -> /summary', () => {
+  assert.equal(d(group('tldr', { mentionsBot: true })).name, 'summary');
+  assert.equal(d(group('hey pocket what did I miss?')).name, 'summary');
+  assert.equal(d(group('/summary')).name, 'summary');
 });
