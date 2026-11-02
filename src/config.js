@@ -41,6 +41,7 @@ export const config = Object.freeze({
   rateLimitPerMin: int(env.RATE_LIMIT_PER_MIN, 6),
   queueMax: int(env.QUEUE_MAX, 5),
   maxMessageAgeS: int(env.MAX_MESSAGE_AGE_S, 60),
+  lateReplyMaxS: int(env.LATE_REPLY_MAX_S, 86400),
 
   dataDir: path.resolve(expandHome(env.DATA_DIR || './data')),
   authDir: path.resolve(expandHome(env.AUTH_DIR || './auth')),

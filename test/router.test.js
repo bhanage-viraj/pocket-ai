@@ -119,7 +119,22 @@ test('reply + @mention answers the quoted message; stale messages are context on
   assert.match(withText.text, /replying to: "kal ka match.*"\)\nin short/);
   assert.equal(d(group('/stats', { mentionsBot: true, quoted })).name, 'stats');
   assert.equal(d(group('', { mentionsBot: true })).name, 'help');
-  assert.deepEqual(d(group('hello', { mentionsBot: true, stale: true })), { action: 'ignore', reason: 'stale' });
+});
+
+test('late messages: addressed ones still get a reply (up to LATE_REPLY_MAX_S), chatter does not', () => {
+  const now = Math.floor(Date.now() / 1000);
+  const late = d(group('/ai who won?', { stale: true, timestamp: now - 3600 }));
+  assert.equal(late.action, 'ai');
+  assert.equal(late.late, true);
+  assert.equal(d(group('just chatting', { stale: true, timestamp: now - 3600 })).action, 'ignore');
+  assert.equal(d(msg({ stale: true, timestamp: now - 600 })).late, true);
+  assert.deepEqual(d(group('/ai ancient', { stale: true, timestamp: now - 3 * 86400 })), { action: 'ignore', reason: 'too-old' });
+});
+
+test('a late answer says sorry and quotes the original', async () => {
+  const h = harness();
+  await h.router.handle(group('/ai who won?', { id: 'l1', stale: true, timestamp: Math.floor(Date.now() / 1000) - 900 }));
+  assert.match(h.replies[0], /^_\(sorry for the late reply, I was offline\)_\necho: \[Rahul\]: who won\?/);
 });
 
 test('a stale group message still lands in the context', async () => {

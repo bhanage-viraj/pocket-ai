@@ -24,10 +24,21 @@ export function parseCommand(text) {
   return { name: m[1].toLowerCase(), argText, args: argText ? argText.split(/\s+/) : [] };
 }
 
-/** Pure routing decision. */
+/**
+ * Pure routing decision. Late messages (delivered after a reconnect) are answered too when they
+ * were addressed to the bot, up to config.lateReplyMaxS old; plain group chatter stays context only
+ * (that already falls out of the normal rules, since unaddressed group messages are ignored).
+ */
 export function decide(msg, { config, commands }) {
+  const d = decideNow(msg, { config, commands });
+  if (!msg.stale || d.action === 'ignore') return d;
+  const age = Date.now() / 1000 - (msg.timestamp || 0);
+  if (age > config.lateReplyMaxS) return { action: 'ignore', reason: 'too-old' };
+  return { ...d, late: true };
+}
+
+function decideNow(msg, { config, commands }) {
   const isOwner = isOwnerNumber(msg.sender.number);
-  if (msg.stale) return { action: 'ignore', reason: 'stale' }; // backlog after reconnect: context only
   let text = (msg.text || '').trim();
   // a bare "@Pocket" in a group arrives empty (mention stripped) but should still get /help
   if (!text && !(msg.isGroup && msg.mentionsBot)) return { action: 'ignore', reason: 'empty' };
@@ -92,7 +103,7 @@ export function createRouter(deps) {
         if (d.name === 'unknown') await reply(`Unknown command /${d.typed}. Send /help to see what I can do.`);
         else await commands.get(d.name).run({ ...ctx, args: d.args, argText: d.argText });
       } else {
-        await handleAi(ctx, d.text);
+        await handleAi(ctx, d.text, d.late);
       }
     } catch (err) {
       log.error('handler failed:', err.stack || err.message);
@@ -101,7 +112,7 @@ export function createRouter(deps) {
     return d;
   }
 
-  async function handleAi(ctx, text) {
+  async function handleAi(ctx, text, late = false) {
     const { sender, chatId, isGroup, reply } = ctx;
     if (!sender.isOwner && !limiter.take(sender.jid)) {
       if (!isGroup) await reply('⏳ Too many messages — give me a minute.');
@@ -128,13 +139,16 @@ export function createRouter(deps) {
           }) ?? '';
           const answer = (await chat.reply({ chatId, isGroup, userContent, context: extra })) || '🤔';
           memory.addExchange(chatId, sender.number, userContent, answer);
-          return answer;
+          return late ? `_(sorry for the late reply, I was offline)_\n${answer}` : answer;
         } finally {
           await io.setTyping(chatId, false);
         }
       });
     } catch (err) {
-      if (err instanceof QueueFullError) return reply('🥵 I\'m busy right now, try again in a minute.');
+      if (err instanceof QueueFullError) {
+        if (late) return log.warn('queue full, dropping a late message'); // don't spam "busy" for backlog
+        return reply('🥵 I\'m busy right now, try again in a minute.');
+      }
       throw err;
     }
     if (job.position > 0) await reply(`⏳ In queue (#${job.position})…`);
