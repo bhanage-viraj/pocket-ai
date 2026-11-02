@@ -4,7 +4,10 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 echo "==> Installing packages"
-pkg update -y
+# Full upgrade first: a fresh Termux has old libs (libc++, openssl), and installing
+# new nodejs/curl on top of them fails with "CANNOT LINK EXECUTABLE".
+apt-get update
+apt-get full-upgrade -y -o Dpkg::Options::=--force-confnew
 pkg install -y nodejs git tmux curl openssh termux-api cmake clang make
 
 echo "==> Installing Node dependencies"
