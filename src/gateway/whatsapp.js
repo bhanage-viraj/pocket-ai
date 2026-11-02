@@ -43,6 +43,19 @@ export function createWhatsAppGateway({ config, onMessage }) {
 
   const isSelf = (jid) => !!jid && selfIds.some((id) => areJidsSameUser(id, jid));
 
+  /** Like isSelf, but also maps an unknown @lid to its phone-number JID first (mentions in groups use LIDs). */
+  async function isSelfAsync(current, jid) {
+    if (!jid) return false;
+    if (isSelf(jid)) return true;
+    if (!jid.endsWith('@lid')) return false;
+    const pn = await current.signalRepository?.lidMapping?.getPNForLID?.(jid).catch(() => null);
+    if (pn && isSelf(pn)) {
+      selfIds.push(jid); // remember our LID for next time
+      return true;
+    }
+    return false;
+  }
+
   async function connect() {
     const { state, saveCreds } = await useMultiFileAuthState(config.authDir);
     const { version } = await fetchLatestBaileysVersion().catch(() => ({}));
@@ -99,7 +112,9 @@ export function createWhatsAppGateway({ config, onMessage }) {
     if (connection === 'open') {
       reconnectAttempts = 0;
       pairingRequested = false;
-      selfIds = [current.user?.id, current.user?.lid].filter(Boolean);
+      const me = current.authState?.creds?.me;
+      selfIds = [...new Set([current.user?.id, current.user?.lid, me?.id, me?.lid].filter(Boolean))];
+      log.debug(`self ids: ${selfIds.map((j) => j.split('@')[1]).join(', ')}`);
       log.info(`✅ WhatsApp connected as ${jidDecode(current.user?.id)?.user}`);
     }
 
@@ -154,8 +169,11 @@ export function createWhatsAppGateway({ config, onMessage }) {
     if (!text.trim()) return skip(`no text (${Object.keys(content).join(',')})`);
 
     const contextInfo = Object.values(content).find((v) => v && typeof v === 'object' && v.contextInfo)?.contextInfo;
-    const mentionsBot = (contextInfo?.mentionedJid || []).some(isSelf);
-    const repliesToBot = isSelf(contextInfo?.participant);
+    const mentioned = contextInfo?.mentionedJid || [];
+    let mentionsBot = false;
+    for (const j of mentioned) if (await isSelfAsync(current, j)) { mentionsBot = true; break; }
+    const repliesToBot = await isSelfAsync(current, contextInfo?.participant);
+    if (mentioned.length) log.debug(`mentions: ${mentioned.map((j) => j.split('@')[1]).join(', ')} -> bot=${mentionsBot}`);
 
     // remove "@<bot>" tokens from the text
     for (const id of selfIds) {
