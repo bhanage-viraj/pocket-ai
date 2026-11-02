@@ -86,7 +86,7 @@ export function createWhatsAppGateway({ config, onMessage }) {
           `\n┌──────────────────────────────────────────────┐\n` +
             `│  PAIRING CODE:  ${pretty.padEnd(29)}│\n` +
             `└──────────────────────────────────────────────┘\n` +
-            `WhatsApp Business (bot number) → ⋮ → Linked devices → Link a device\n` +
+            `Cloned WhatsApp (bot number) → ⋮ → Linked devices → Link a device\n` +
             `→ "Link with phone number instead" → enter the code.\n`,
         );
       } catch (err) {

@@ -110,7 +110,7 @@ npm run console             # or chat with it in the terminal, no WhatsApp neede
 npm test                    # 25 unit tests, no model needed
 ```
 
-**On the phone:** follow [`docs/PHONE_SETUP.md`](docs/PHONE_SETUP.md). In short: Termux from F-Droid → `git clone` → `./scripts/termux-setup.sh` → `./scripts/start.sh` → enter the pairing code in WhatsApp Business.
+**On the phone:** follow [`docs/PHONE_SETUP.md`](docs/PHONE_SETUP.md). In short: Termux from F-Droid → `git clone` → `./scripts/termux-setup.sh` → `./scripts/start.sh` → enter the pairing code in the cloned WhatsApp (realme App Clone).
 
 ## Using it
 

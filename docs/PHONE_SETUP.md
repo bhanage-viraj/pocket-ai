@@ -6,7 +6,9 @@ This takes about 45 minutes, mostly waiting for the llama.cpp build. Do the step
 
 ## 0. Before you start
 - The phone is charging and on Wi-Fi.
-- **WhatsApp Business** is set up with the bot SIM. Your personal WhatsApp stays separate.
+- A **cloned WhatsApp** is set up with the bot SIM. Your personal WhatsApp stays separate.
+  - On realme UI: **Settings → Apps → App Clone → WhatsApp** → turn it on. A second WhatsApp icon (with a small clone badge) appears on the home screen.
+  - Open the clone, register it with the bot SIM's number, and finish setup (name, photo).
 - The code is pushed to GitHub from the Mac (see the end of this guide).
 
 ## 1. Install the apps (from F-Droid, not the Play Store)
@@ -86,7 +88,7 @@ Press **Ctrl+b** then **n** to switch to the `bot` window. After a few seconds i
 ```
 PAIRING CODE:  ABCD-EFGH
 ```
-Now open **WhatsApp Business** → ⋮ → **Linked devices** → **Link a device** → **Link with phone number instead** → type the code.
+Now open the **cloned WhatsApp** (the icon with the clone badge, logged in as the bot number) → ⋮ → **Linked devices** → **Link a device** → **Link with phone number instead** → type the code.
 
 When the window shows `✅ WhatsApp connected`, press **Ctrl+b** then **d** to detach. It keeps running.
 
@@ -112,7 +114,7 @@ Reboot the phone. Don't open anything. After about a minute, message the bot. It
 | Run evals on the phone | `npm run eval -- --label phone-1b-t2` |
 | Try another model | `./scripts/download-model.sh 4b`, set `MODEL_PATH` in `.env`, restart |
 
-**Open WhatsApp Business on the phone at least once every ~14 days**, or WhatsApp unlinks the bot.
+**Open the cloned WhatsApp on the phone at least once every ~14 days**, or WhatsApp unlinks the bot.
 
 ## Optional: SSH from the Mac
 In Termux: `pkg install openssh && passwd && sshd`. Find the phone's IP with `ifconfig wlan0`.
