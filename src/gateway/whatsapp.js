@@ -126,7 +126,7 @@ export function createWhatsAppGateway({ config, onMessage }) {
         process.exit(EXIT_LOGGED_OUT);
       }
       const delay =
-        code === DisconnectReason.restartRequired ? 0 : Math.min(60_000, 2000 * 2 ** reconnectAttempts++);
+        code === DisconnectReason.restartRequired ? 0 : Math.min(15_000, 2000 * 2 ** reconnectAttempts++); // short cap: recover fast after a network blip
       log.warn(`🔌 WhatsApp connection closed (${code ?? 'unknown'}); reconnecting in ${delay / 1000}s`);
       setTimeout(() => connect().catch((e) => log.error('reconnect failed:', e.message)), delay);
     }
