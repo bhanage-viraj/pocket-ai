@@ -68,6 +68,10 @@ export const config = Object.freeze({
   mediaThreads: int(env.MEDIA_THREADS, 2),
   stickerFont: env.STICKER_FONT || '/system/fonts/DroidSans-Bold.ttf',
   tesseractBin: env.TESSERACT_BIN || 'tesseract',
+  // live info in chat: weather, currency, news/web search. WEB=off disables it
+  web: bool(env.WEB, true),
+  braveApiKey: env.BRAVE_API_KEY || '',
+  defaultCity: env.DEFAULT_CITY || '',
   // personal deadlines (portal screenshots): remind at this local time on the due day
   deadlineRemindAt: env.DEADLINE_REMIND_AT || '00:00',
   // morning brief to the owner (change with /brief 07:30)

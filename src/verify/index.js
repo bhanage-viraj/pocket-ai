@@ -125,7 +125,7 @@ export function createVerifier({ llm, fetchImpl = fetch, newsRegion = { hl: 'en-
     return { verdict, reason: String(out.reason || '').trim(), sources: shown, query };
   }
 
-  return { verify };
+  return { verify, wikipedia, news };
 }
 
 /** WhatsApp message for a verification result. */

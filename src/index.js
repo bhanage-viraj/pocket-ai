@@ -15,6 +15,8 @@ import { createDeadlines } from './core/deadlines.js';
 import { createBrief, createSettings } from './core/brief.js';
 import { createMedia } from './media/index.js';
 import { createStickerMaker } from './stickers/index.js';
+import { createWeb } from './web/index.js';
+import { createVerifier } from './verify/index.js';
 import { createQueue } from './core/queue.js';
 import { createRateLimiter } from './core/ratelimit.js';
 import { createMetrics } from './core/metrics.js';
@@ -56,6 +58,7 @@ async function main() {
     bridge, settings, deadlines, brief,
     media: config.media ? createMedia({ config }) : null,
     stickers: config.media ? createStickerMaker({ config, llm }) : null,
+    web: config.web ? createWeb({ config, search: createVerifier({ llm }) }) : null,
   });
 
   if (await llm.health()) {

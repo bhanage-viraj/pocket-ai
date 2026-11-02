@@ -12,6 +12,7 @@ import { QueueFullError } from './queue.js';
 import { MediaUnavailableError } from '../media/index.js';
 import { STICKER_RE } from '../stickers/index.js';
 import { log } from '../util/log.js';
+import { sourcesFooter } from '../web/index.js';
 
 const STICKABLE = new Set(['image', 'gif', 'sticker']);
 /**
@@ -114,6 +115,9 @@ function decideNow(msg, { config, commands }) {
     if (ai) text = text.slice(ai[0].length).trim() || 'hi';
   }
 
+  // "/search x" / "/google x" -> chat with web results
+  const s = /^\/(search|google|web)\b\s*/i.exec(text);
+  if (s) return { action: 'ai', text: text.slice(s[0].length).trim() || 'latest news', isOwner, search: true };
   const cmd = parseCommand(text);
   if (cmd) {
     const command = commands.get(cmd.name);
@@ -125,7 +129,7 @@ function decideNow(msg, { config, commands }) {
 }
 
 export function createRouter(deps) {
-  const { config, commands, tasks, detector, chat, memory, context, media, stickers, deadlines, settings, queue, limiter, metrics, io, db, llm } = deps;
+  const { config, commands, tasks, detector, chat, memory, context, media, stickers, deadlines, settings, queue, limiter, metrics, io, db, llm, web } = deps;
   const taskByName = new Map(tasks.map((t) => [t.name, t]));
 
   async function handle(msg) {
@@ -163,7 +167,7 @@ export function createRouter(deps) {
         if (d.name === 'unknown') await reply(`Unknown command /${d.typed}. Send /help to see what I can do.`);
         else await commands.get(d.name).run({ ...ctx, args: d.args, argText: d.argText });
       } else {
-        await handleAi(ctx, d.text, d.late);
+        await handleAi(ctx, d.text, d.late, null, !!d.search);
       }
     } catch (err) {
       log.error('handler failed:', err.stack || err.message);
@@ -273,7 +277,7 @@ export function createRouter(deps) {
     return { action: 'ai', media: msg.media.kind };
   }
 
-  async function handleAi(ctx, text, late = false, mediaIn = null) {
+  async function handleAi(ctx, text, late = false, mediaIn = null, forceSearch = false) {
     const { sender, chatId, isGroup, reply } = ctx;
     if (!sender.isOwner && !limiter.take(sender.jid)) {
       if (!isGroup) await reply('⏳ Too many messages — give me a minute.');
@@ -315,12 +319,31 @@ export function createRouter(deps) {
             memory.addExchange(chatId, sender.number, userContent, answer ?? `[did ${task.name}]`);
             return answer == null ? (heard || null) : heard + answer;
           }
-          const extra = context?.build({
+          let extra = context?.build({
             chatId, isGroup, sender, msgId: ctx.msg.id, since: memory.lastReplyTs(chatId),
           }) ?? '';
+          const lateNote = late ? '_(sorry for the late reply, I was offline)_\n' : '';
+          // live info: weather/currency answered by code, search results handed to the model
+          let found = null;
+          const kind = web && (forceSearch ? 'search' : web.needsWeb(text));
+          if (kind) {
+            const t0 = performance.now();
+            try {
+              found = await web.lookup(text, { chatId, kind });
+            } catch (err) {
+              log.warn(`web ${kind} failed: ${err.message}`);
+              found = { block: 'WEB RESULTS: the web search failed just now. Tell the user you couldn\'t check online right now.', sources: [] };
+            }
+            log.info(`  web=${kind} ${found?.direct ? 'direct' : `${found?.sources?.length ?? 0} results`} ${Math.round(performance.now() - t0)}ms`);
+            if (found?.direct) {
+              memory.addExchange(chatId, sender.number, userContent, found.direct);
+              return lateNote + heard + found.direct;
+            }
+            if (found?.block) extra = [extra, found.block].filter(Boolean).join('\n\n');
+          }
           const answer = (await chat.reply({ chatId, isGroup, userContent, context: extra })) || '🤔';
           memory.addExchange(chatId, sender.number, userContent, answer);
-          return (late ? '_(sorry for the late reply, I was offline)_\n' : '') + heard + answer;
+          return lateNote + heard + answer + sourcesFooter(answer, found?.sources);
         } finally {
           await io.setTyping(chatId, false);
         }
