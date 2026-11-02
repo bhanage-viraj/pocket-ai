@@ -67,6 +67,11 @@ export const config = Object.freeze({
   visionUrl: (env.VISION_URL || 'http://127.0.0.1:8081').replace(/\/$/, ''),
   mediaThreads: int(env.MEDIA_THREADS, 2),
   stickerFont: env.STICKER_FONT || '/system/fonts/DroidSans-Bold.ttf',
+  tesseractBin: env.TESSERACT_BIN || 'tesseract',
+  // personal deadlines (portal screenshots): remind at this local time on the due day
+  deadlineRemindAt: env.DEADLINE_REMIND_AT || '00:00',
+  // morning brief to the owner (change with /brief 07:30)
+  briefTime: env.BRIEF_TIME || '08:00',
   rateLimitPerMin: int(env.RATE_LIMIT_PER_MIN, 6),
   queueMax: int(env.QUEUE_MAX, 5),
   maxMessageAgeS: int(env.MAX_MESSAGE_AGE_S, 60),

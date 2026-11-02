@@ -40,6 +40,14 @@ function verifyDecision(text, isOwner) {
   return { action: 'command', name: 'verify', args: argText ? argText.split(/\s+/) : [], argText, isOwner };
 }
 
+const DEADLINE_RE = /\b(deadlines?|due|assignments?|quiz(zes)?|exams?|add (these|this)|track (these|this)|remind me)\b/i;
+/** A portal screenshot in a DM (or a reply to one) with "deadlines" etc. in the caption. */
+export function deadlinesRequest(msg) {
+  if (msg.isGroup || !DEADLINE_RE.test(msg.text || '')) return null;
+  const media = msg.media?.kind === 'image' ? msg.media : msg.quoted?.media?.kind === 'image' ? msg.quoted.media : null;
+  return media ? { media } : null;
+}
+
 /** Quoted message + the user's words, as one prompt. */
 export function quoteBlock(quoted, text) {
   const q = quoted.length > 500 ? quoted.slice(0, 499) + '…' : quoted;
@@ -117,7 +125,7 @@ function decideNow(msg, { config, commands }) {
 }
 
 export function createRouter(deps) {
-  const { config, commands, tasks, detector, chat, memory, context, media, stickers, queue, limiter, metrics, io, db, llm } = deps;
+  const { config, commands, tasks, detector, chat, memory, context, media, stickers, deadlines, settings, queue, limiter, metrics, io, db, llm } = deps;
   const taskByName = new Map(tasks.map((t) => [t.name, t]));
 
   async function handle(msg) {
@@ -126,6 +134,11 @@ export function createRouter(deps) {
     } catch (err) {
       log.warn('context observe failed:', err.message);
     }
+    if (!msg.isGroup && isOwnerNumber(msg.sender.number) && settings && settings.get('owner_chat') !== msg.chatId) {
+      settings.set('owner_chat', msg.chatId); // where the morning brief goes
+    }
+    const dl = deadlines && deadlinesRequest(msg);
+    if (dl && isAllowedDm(msg.sender.number) && !msg.stale) return handleDeadlines(msg, dl);
     const st = stickers && stickerRequest(msg);
     if (st && (msg.isGroup || isAllowedDm(msg.sender.number)) && !msg.stale) return handleSticker(msg, st);
     if (msg.media && !msg.text) return handleMedia(msg);
@@ -156,6 +169,39 @@ export function createRouter(deps) {
       await reply('⚠️ Something went wrong on my side. Try again?').catch(() => {});
     }
     return d;
+  }
+
+  async function handleDeadlines(msg, { media: m }) {
+    const reply = (t) => io.reply(msg, t);
+    log.info(`→ dm ${msg.sender.name} [deadlines screenshot]`);
+    metrics.countMessage();
+    try {
+      const job = queue.push(async () => {
+        const text = await deadlines.ocr(await m.download());
+        const { parseDeadlines } = await import('./deadlines.js');
+        return { items: parseDeadlines(text, { defaultTz: config.timezone }), text };
+      });
+      const { items, text } = await job.done;
+      log.info(`  ocr ${text.length} chars -> ${items.length} deadlines`);
+      if (!items.length) return reply('📸 I couldn\'t find any deadlines in that screenshot. It works best on a list like "Nov 5 · Assignment · Course • Due at 11:59 PM".');
+      const { added, skipped, past } = deadlines.add(msg.chatId, items);
+      const days = [...new Set(added.map((d) => new Intl.DateTimeFormat('en-GB', { timeZone: d.tz, day: 'numeric', month: 'short' }).format(d.due)))];
+      const lines = [
+        added.length ? `📚 Added *${added.length}* deadline${added.length === 1 ? '' : 's'} on ${days.join(', ')}.` : '📚 Nothing new.',
+        ...added.map((d) => `• ${d.course ? `*${d.course}*: ` : ''}${d.title}`),
+        skipped ? `\n(${skipped} already saved)` : '',
+        past ? `(${past} already past, skipped)` : '',
+        added.length ? `\nI'll remind you at ${config.deadlineRemindAt} on each due day. /deadlines to see all.` : '',
+      ];
+      await reply(lines.filter(Boolean).join('\n'));
+    } catch (err) {
+      if (err instanceof MediaUnavailableError) await reply('📸 Screenshot reading is still being set up on my phone. Try again in a bit.');
+      else {
+        log.error('deadlines failed:', err.message);
+        await reply('⚠️ Couldn\'t read that screenshot. Try a clearer/cropped one.');
+      }
+    }
+    return { action: 'deadlines' };
   }
 
   async function handleSticker(msg, { media: m, prompt }) {

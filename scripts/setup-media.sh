@@ -12,8 +12,9 @@ DEST="${MODELS_DIR:-$HOME/models}"
 HF=https://huggingface.co
 mkdir -p "$DEST"
 
-echo "==> ffmpeg"
+echo "==> ffmpeg + tesseract (screenshot text for /deadlines)"
 command -v ffmpeg >/dev/null || pkg install -y ffmpeg
+command -v tesseract >/dev/null || pkg install -y tesseract
 
 echo "==> whisper.cpp $REF"
 if ! command -v whisper-cli >/dev/null; then

@@ -130,6 +130,9 @@ npm test                    # 25 unit tests, no model needed
 | `/reminders` | Upcoming reminders in this chat (`/reminders cancel <id>`) |
 | `/summary` | Group TL;DR of what you missed (or `@Pocket tldr`) |
 | `/sticker` | How to make stickers |
+| `/deadlines` | Your deadlines. Add them by sending a **portal screenshot** with the caption `deadlines` (`/deadlines done <id>`) |
+| `/brief` | 🔒 Morning brief now (`/brief off`, `/brief 07:30`); sent automatically every morning |
+| `/bunk 42 50 75` | Attendance: how many classes you can skip / must attend |
 | `/verify <claim>` | Fact check with web sources. Or reply to any message with `@Pocket verify this` / `sach hai kya` |
 | `/poll Q? \| A \| B` | Real WhatsApp poll (`/poll multi …` for multiple answers). Or say it: `@Pocket make a poll: goa or manali` |
 | `/claude <question>` | Ask Claude via the Mac bridge (works in groups without tagging) |

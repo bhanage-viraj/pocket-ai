@@ -11,6 +11,8 @@ import { createMemory } from './core/memory.js';
 import { createContext } from './core/context.js';
 import { createBridge } from './core/bridge.js';
 import { createReminderScheduler } from './core/reminders.js';
+import { createDeadlines } from './core/deadlines.js';
+import { createBrief, createSettings } from './core/brief.js';
 import { createMedia } from './media/index.js';
 import { createStickerMaker } from './stickers/index.js';
 import { createQueue } from './core/queue.js';
@@ -43,12 +45,15 @@ async function main() {
 
   const gateway = createWhatsAppGateway({ config, onMessage: (msg) => router.handle(msg) });
   const bridge = createBridge({ db, config, io: gateway.io });
+  const settings = createSettings(db);
+  const deadlines = createDeadlines({ db, config, io: gateway.io });
+  const brief = createBrief({ db, config, io: gateway.io, deadlines, settings });
   const router = createRouter({
     config, db, llm, tasks, commands, detector, chat, memory, context, metrics,
     queue: createQueue({ max: config.queueMax }),
     limiter: createRateLimiter({ perMinute: config.rateLimitPerMin }),
     io: gateway.io,
-    bridge,
+    bridge, settings, deadlines, brief,
     media: config.media ? createMedia({ config }) : null,
     stickers: config.media ? createStickerMaker({ config, llm }) : null,
   });
@@ -71,6 +76,10 @@ async function main() {
   await gateway.connect();
   bridge.start();
   createReminderScheduler({ db, io: gateway.io }).start();
+  setInterval(() => {
+    deadlines.tick().catch((e) => log.warn('deadlines tick failed:', e.message));
+    brief.tick().catch((e) => log.warn('brief tick failed:', e.message));
+  }, 30_000).unref?.();
   log.info(`⏰ Reminders on (timezone ${config.timezone})`);
   log.info(bridge.enabled ? `🌉 Mac bridge: ${config.bridgeUrl}` : '🌉 Mac bridge off (set MAC_BRIDGE_URL and BRIDGE_TOKEN for /claude and /code)');
 
