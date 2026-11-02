@@ -1,9 +1,9 @@
-{"text": "remind me tomorrow at 9am to call mom", "intent": "set_reminder", "fields": {"what": {"contains": ["call mom"]}, "when": {"contains": ["tomorrow"]}}, "tags": ["en"]}
+{"text": "remind me tomorrow at 8am to water the plants", "intent": "set_reminder", "fields": {"what": {"contains": ["plants"]}, "when": {"contains": ["tomorrow"]}}, "tags": ["en"]}
 {"text": "in 10 minutes remind me to take the clothes out of the machine", "intent": "set_reminder", "fields": {"what": {"contains": ["clothes"]}, "when": {"contains": ["10 minutes"]}}, "tags": ["en"]}
 {"text": "set a reminder for friday 5pm: submit the assignment", "intent": "set_reminder", "fields": {"what": {"contains": ["assignment"]}, "when": {"contains": ["friday"]}}, "tags": ["en"]}
 {"text": "ping me at 6:30 to leave for the airport", "intent": "set_reminder", "fields": {"what": {"contains": ["airport"]}, "when": {"contains": ["6:30"]}}, "tags": ["en"]}
 {"text": "remind me tonight to pay the electricity bill", "intent": "set_reminder", "fields": {"what": {"contains": ["electricity", "bill"]}, "when": {"contains": ["tonight"]}}, "tags": ["en"]}
-{"text": "kal subah 9 baje yaad dilana gym jaana hai", "intent": "set_reminder", "fields": {"what": {"contains": ["gym"]}, "when": {"contains": ["kal subah 9 baje", "9 baje"]}}, "tags": ["hinglish"]}
+{"text": "kal subah 7 baje yaad dilana dawai leni hai", "intent": "set_reminder", "fields": {"what": {"contains": ["dawai"]}, "when": {"contains": ["kal subah 7 baje", "7 baje"]}}, "tags": ["hinglish"]}
 {"text": "10 min baad yaad dila dena chai banani hai", "intent": "set_reminder", "fields": {"what": {"contains": ["chai"]}, "when": {"contains": ["10 min baad"]}}, "tags": ["hinglish"]}
 {"text": "shaam 6 baje reminder: mummy ko call karna", "intent": "set_reminder", "fields": {"what": {"contains": ["mummy"]}, "when": {"contains": ["6 baje"]}}, "tags": ["hinglish"]}
 {"text": "parso yaad dilana ki rent dena hai", "intent": "set_reminder", "fields": {"what": {"contains": ["rent"]}, "when": {"contains": ["parso"]}}, "tags": ["hinglish"]}
