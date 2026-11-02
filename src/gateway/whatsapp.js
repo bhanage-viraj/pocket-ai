@@ -61,6 +61,7 @@ export function createWhatsAppGateway({ config, onMessage }) {
     current.ev.on('creds.update', saveCreds);
     current.ev.on('connection.update', (u) => onConnectionUpdate(current, u));
     current.ev.on('messages.upsert', ({ messages, type }) => {
+      log.debug(`upsert type=${type} n=${messages.length}`);
       if (type !== 'notify') return; // 'append' = history sync / backlog
       for (const raw of messages) {
         normalize(current, raw)
@@ -133,15 +134,16 @@ export function createWhatsAppGateway({ config, onMessage }) {
   async function normalize(current, raw) {
     const { key } = raw;
     const chatId = key?.remoteJid;
-    if (!chatId || key.fromMe) return null;
-    if (isJidStatusBroadcast(chatId) || isJidBroadcast(chatId) || isJidNewsletter(chatId)) return null;
+    const skip = (why) => (log.debug(`skip ${key?.id ?? '?'}: ${why}`), null);
+    if (!chatId || key.fromMe) return skip(key?.fromMe ? 'fromMe' : 'no chat');
+    if (isJidStatusBroadcast(chatId) || isJidBroadcast(chatId) || isJidNewsletter(chatId)) return skip('broadcast');
 
     // Backlog guard: after a reconnect WhatsApp delivers queued messages; ignore stale ones.
     const timestamp = Number(raw.messageTimestamp || 0);
-    if (timestamp && Date.now() / 1000 - timestamp > config.maxMessageAgeS) return null;
+    if (timestamp && Date.now() / 1000 - timestamp > config.maxMessageAgeS) return skip('too old');
 
     const content = normalizeMessageContent(raw.message);
-    if (!content) return null;
+    if (!content) return skip(`no content (stub=${raw.messageStubType ?? '-'} ${raw.messageStubParameters?.[0] ?? ''})`);
     let text =
       content.conversation ||
       content.extendedTextMessage?.text ||
@@ -149,7 +151,7 @@ export function createWhatsAppGateway({ config, onMessage }) {
       content.videoMessage?.caption ||
       content.documentMessage?.caption ||
       '';
-    if (!text.trim()) return null;
+    if (!text.trim()) return skip(`no text (${Object.keys(content).join(',')})`);
 
     const contextInfo = Object.values(content).find((v) => v && typeof v === 'object' && v.contextInfo)?.contextInfo;
     const mentionsBot = (contextInfo?.mentionedJid || []).some(isSelf);

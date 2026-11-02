@@ -58,7 +58,11 @@ export function createRouter(deps) {
 
   async function handle(msg) {
     const d = decide(msg, { config, commands });
-    if (d.action === 'ignore') return d;
+    if (d.action === 'ignore') {
+      const n = msg.sender.number;
+      log.debug(`ignored (${d.reason}) from ${msg.sender.jid?.split('@')[1] ?? '?'} number=${n ? '…' + n.slice(-2) : 'unresolved'}`);
+      return d;
+    }
     metrics.countMessage();
 
     const sender = { ...msg.sender, isOwner: d.isOwner };
