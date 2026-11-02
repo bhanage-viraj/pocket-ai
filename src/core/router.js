@@ -31,6 +31,15 @@ export function stickerRequest(msg) {
   return { media, prompt: text.replace(/^\/(sticker|stiker)\b\s*/i, '') || 'sticker' };
 }
 
+const VERIFY_RE = /^(verify|fact[- ]?check|check (this|that|if)|is (this|that|it) (true|real|fake)|sach hai( kya)?|ye sach hai( kya)?|fake hai( kya)?)\b[?!.:,\s]*/i;
+/** "verify this" / "fact check: …" -> the /verify command (claim = quoted message or the rest). */
+function verifyDecision(text, isOwner) {
+  const m = VERIFY_RE.exec(text);
+  if (!m) return null;
+  const argText = text.slice(m[0].length).trim();
+  return { action: 'command', name: 'verify', args: argText ? argText.split(/\s+/) : [], argText, isOwner };
+}
+
 /** Quoted message + the user's words, as one prompt. */
 export function quoteBlock(quoted, text) {
   const q = quoted.length > 500 ? quoted.slice(0, 499) + '…' : quoted;
@@ -82,12 +91,16 @@ function decideNow(msg, { config, commands }) {
     if (/^(tl;?dr|summary|summarize|summarise|what did i miss|kya miss kiya)\b[?!. ]*$/i.test(text)) {
       return { action: 'command', name: 'summary', args: [], argText: '', isOwner };
     }
+    const v = verifyDecision(text, isOwner);
+    if (v && commands.has('verify')) return v;
     // "@Pocket" as a reply to someone's message = answer that message
     if (!text && msg.quoted?.text) return { action: 'ai', text: quoteBlock(msg.quoted.text, ''), isOwner };
     if (!text) return { action: 'command', name: 'help', args: [], argText: '', isOwner };
     if (msg.quoted?.text && !parseCommand(text)) return { action: 'ai', text: quoteBlock(msg.quoted.text, text), isOwner };
   } else {
     if (!isAllowedDm(msg.sender.number)) return { action: 'ignore', reason: 'dm-not-allowed' };
+    const v = verifyDecision(text, isOwner);
+    if (v && commands.has('verify')) return v;
     // "/ai question" also works in DMs
     const ai = /^\/ai\b\s*/i.exec(text);
     if (ai) text = text.slice(ai[0].length).trim() || 'hi';

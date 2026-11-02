@@ -130,6 +130,7 @@ npm test                    # 25 unit tests, no model needed
 | `/reminders` | Upcoming reminders in this chat (`/reminders cancel <id>`) |
 | `/summary` | Group TL;DR of what you missed (or `@Pocket tldr`) |
 | `/sticker` | How to make stickers |
+| `/verify <claim>` | Fact check with web sources. Or reply to any message with `@Pocket verify this` / `sach hai kya` |
 | `/poll Q? \| A \| B` | Real WhatsApp poll (`/poll multi …` for multiple answers). Or say it: `@Pocket make a poll: goa or manali` |
 | `/claude <question>` | Ask Claude via the Mac bridge (works in groups without tagging) |
 | `/code [project:] <task>` | 🔒 Claude Code works on a new branch on the Mac and reports back |
@@ -142,6 +143,10 @@ npm test                    # 25 unit tests, no model needed
 - 🎨 **Sticker maker:** send a photo or GIF with a caption like `sticker`, `sticker with text "Monday mood"` or `round sticker, upar likho chai time in yellow`, or reply to one with `isko sticker bana do`. The model turns the prompt into a spec (text, position, colour, square/circle/rounded), with a plain-code fallback, and ffmpeg renders a 512×512 WebP. **GIFs become animated stickers.** In groups the caption has to start with "sticker", be a reply to a photo asking to make one, or tag the bot.
 - ⏰ **Reminders:** `remind me tomorrow 9am to call mom` or `kal shaam 6 baje yaad dilana …`. The model extracts *what* and the *time phrase*, and plain code (`src/util/when.js`) parses English and Hinglish times in `TIMEZONE`, which defaults to the phone's setting. Reminders are stored in SQLite, survive restarts, and @mention the person in groups.
 - 📝 **Group summary:** `/summary` or `@Pocket tldr` summarises the messages since *your* last one in that group (up to `SUMMARY_MAX_LINES`), on the phone.
+
+## Fact check (`@Pocket verify this`)
+
+The fact check is free and runs on the phone. The claim (the quoted message, or the text after `/verify`) is turned into keywords. The bot then collects evidence from **Wikipedia** (search plus page summaries) and **Google News RSS** (headlines with dates), and Gemma judges the claim **only against that numbered evidence**, using grammar-constrained JSON. Code then double-checks the result: a verdict that doesn't cite any evidence becomes **❓ Unverified**, and with no sources at all the model isn't even asked. Every reply lists its sources and says it was checked automatically. Try it without WhatsApp: `node src/dev/verify.js "<claim>"`.
 
 ## Voice notes and GIFs
 
