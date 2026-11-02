@@ -132,6 +132,7 @@ export function createWhatsAppGateway({ config, onMessage }) {
       selfIds = [...new Set([current.user?.id, current.user?.lid, me?.id, me?.lid].filter(Boolean))];
       log.debug(`self ids: ${selfIds.map((j) => j.split('@')[1]).join(', ')}`);
       log.info(`✅ WhatsApp connected as ${jidDecode(current.user?.id)?.user}`);
+      saveGroups(current); // id -> name, for admin scripts (src/dev/reminders.js); nothing is sent
     }
 
     if (connection === 'close') {
@@ -145,6 +146,19 @@ export function createWhatsAppGateway({ config, onMessage }) {
         code === DisconnectReason.restartRequired ? 0 : Math.min(15_000, 2000 * 2 ** reconnectAttempts++); // short cap: recover fast after a network blip
       log.warn(`🔌 WhatsApp connection closed (${code ?? 'unknown'}); reconnecting in ${delay / 1000}s`);
       setTimeout(() => connect().catch((e) => log.error('reconnect failed:', e.message)), delay);
+    }
+  }
+
+  /** Write the groups we're in (id, name, size) to data/groups.json. Read-only: fetches metadata. */
+  async function saveGroups(current) {
+    try {
+      const all = await current.groupFetchAllParticipating();
+      const rows = Object.values(all).map((g) => ({ id: g.id, name: g.subject, size: g.participants?.length ?? 0 }));
+      fs.mkdirSync(config.dataDir, { recursive: true });
+      fs.writeFileSync(`${config.dataDir}/groups.json`, JSON.stringify(rows, null, 1));
+      log.info(`👥 in ${rows.length} groups (saved to data/groups.json)`);
+    } catch (err) {
+      log.warn('could not list groups:', err.message);
     }
   }
 

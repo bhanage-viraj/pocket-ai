@@ -1,7 +1,7 @@
 // Manage reminders from Termux (no WhatsApp message needed):
 //   node src/dev/reminders.js groups              groups the bot has seen + who talks there
 //   node src/dev/reminders.js list                pending reminders
-//   node src/dev/reminders.js add <file.json>     add reminders: [{ "chat": "<group id or part of a member name>", "at": "2026-11-04T21:00:00+05:30", "text": "…" }]
+//   node src/dev/reminders.js add <file.json>     add reminders: [{ "chat": "<group id or exact group name>", "at": "2026-11-04T21:00:00+05:30", "text": "…" }]
 // The running bot picks new rows up within 15 s.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -13,15 +13,21 @@ const db = openDb(path.join(config.dataDir, 'pocket.db'));
 for (const t of await loadTasks()) t.migrate?.(db);
 const [cmd, arg] = process.argv.slice(2);
 
+/** Groups from data/groups.json (written by the bot on connect: real names) + who talks there. */
 function groups() {
-  const has = (t) => db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(t);
-  if (!has('chat_log')) return [];
-  return db.prepare(`SELECT chat_id, COUNT(*) AS n, MAX(ts) AS last, GROUP_CONCAT(DISTINCT name) AS names
-    FROM chat_log WHERE chat_id LIKE '%@g.us' GROUP BY chat_id ORDER BY last DESC`).all();
+  const file = path.join(config.dataDir, 'groups.json');
+  const named = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : [];
+  const talk = new Map(
+    db.prepare("SELECT chat_id, GROUP_CONCAT(DISTINCT name) AS names FROM chat_log WHERE chat_id LIKE '%@g.us' GROUP BY chat_id").all()
+      .map((r) => [r.chat_id, r.names]),
+  );
+  return named.map((g) => ({ chat_id: g.id, name: g.name, size: g.size, names: talk.get(g.id) || '' }));
 }
 
 if (cmd === 'groups') {
-  for (const g of groups()) console.log(`${g.chat_id}  (${g.n} msgs, last ${new Date(g.last).toLocaleString()})\n   ${g.names}`);
+  const gs = groups();
+  if (!gs.length) console.log('No data/groups.json yet: restart the bot once so it can list its groups.');
+  for (const g of gs) console.log(`${g.chat_id}  "${g.name}" (${g.size} members)${g.names ? `\n   talking: ${g.names}` : ''}`);
 } else if (cmd === 'list') {
   for (const r of db.prepare('SELECT * FROM reminders WHERE sent_at IS NULL ORDER BY due_at').all()) {
     console.log(`#${r.id} ${new Date(r.due_at).toISOString()} ${r.chat_id}\n   ${r.what.replace(/\n/g, ' | ')}`);
@@ -31,8 +37,9 @@ if (cmd === 'groups') {
   const gs = groups();
   const ins = db.prepare('INSERT INTO reminders (chat_id, sender, sender_jid, sender_name, what, due_at, created_at) VALUES (?,?,?,?,?,?,?)');
   for (const it of items) {
+    // "chat": a group id, or the group's exact name
     const chat = it.chat.includes('@') ? it.chat
-      : gs.filter((g) => it.chat.split(',').every((n) => g.names?.toLowerCase().includes(n.trim().toLowerCase())));
+      : gs.filter((g) => g.name?.trim().toLowerCase() === it.chat.trim().toLowerCase());
     const chatId = typeof chat === 'string' ? chat : chat.length === 1 ? chat[0].chat_id : null;
     if (!chatId) throw new Error(`"${it.chat}" matches ${Array.isArray(chat) ? chat.length : 0} groups; use the group id from "groups"`);
     const due = Date.parse(it.at);
