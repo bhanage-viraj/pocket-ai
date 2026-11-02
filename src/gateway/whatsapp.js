@@ -41,6 +41,16 @@ export function createWhatsAppGateway({ config, onMessage }) {
   let reconnectAttempts = 0;
   let pairingRequested = false;
 
+  // Recently handled message ids, so a message delivered twice is answered once.
+  const seenIds = new Set();
+  const seen = (id) => {
+    if (!id) return false;
+    if (seenIds.has(id)) return true;
+    seenIds.add(id);
+    if (seenIds.size > 1000) seenIds.delete(seenIds.values().next().value);
+    return false;
+  };
+
   const isSelf = (jid) => !!jid && selfIds.some((id) => areJidsSameUser(id, jid));
 
   /** Like isSelf, but also maps an unknown @lid to its phone-number JID first (mentions in groups use LIDs). */
@@ -75,8 +85,12 @@ export function createWhatsAppGateway({ config, onMessage }) {
     current.ev.on('connection.update', (u) => onConnectionUpdate(current, u));
     current.ev.on('messages.upsert', ({ messages, type }) => {
       log.debug(`upsert type=${type} n=${messages.length}`);
-      if (type !== 'notify') return; // 'append' = history sync / backlog
+      // 'notify' = live. 'append' = our own sends from other devices AND messages that arrived while
+      // we were offline (delivered on reconnect). Both go through normalize(): fromMe is skipped
+      // there, and old ones are flagged stale (late reply if addressed, else context only).
+      if (type !== 'notify' && type !== 'append') return;
       for (const raw of messages) {
+        if (seen(raw.key?.id)) continue; // the same message can arrive as append and notify
         normalize(current, raw)
           .then((msg) => msg && onMessage(msg))
           .catch((err) => log.error('message handling failed:', err.message));
