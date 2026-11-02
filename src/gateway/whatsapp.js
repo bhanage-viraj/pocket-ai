@@ -1,0 +1,199 @@
+// WhatsApp gateway (Baileys). The only file that knows about WhatsApp.
+// It turns raw Baileys messages into plain `IncomingMessage` objects for the router,
+// and exposes a tiny I/O surface: reply, setTyping, sendText, editText.
+import fs from 'node:fs';
+import pino from 'pino';
+import makeWASocket, {
+  Browsers,
+  DisconnectReason,
+  areJidsSameUser,
+  fetchLatestBaileysVersion,
+  isJidBroadcast,
+  isJidGroup,
+  isJidNewsletter,
+  isJidStatusBroadcast,
+  jidDecode,
+  makeCacheableSignalKeyStore,
+  normalizeMessageContent,
+  useMultiFileAuthState,
+} from 'baileys';
+import { log } from '../util/log.js';
+
+/**
+ * @typedef {object} IncomingMessage
+ * @property {string} id
+ * @property {string} chatId
+ * @property {boolean} isGroup
+ * @property {string} text          message text with the bot's @mention removed
+ * @property {number} timestamp     unix seconds
+ * @property {{jid: string, number: string|null, name: string}} sender
+ * @property {boolean} mentionsBot
+ * @property {boolean} repliesToBot
+ * @property {object} raw           original Baileys message (for quoting)
+ */
+
+const EXIT_LOGGED_OUT = 3;
+
+export function createWhatsAppGateway({ config, onMessage }) {
+  const baileysLogger = pino({ level: process.env.BAILEYS_LOG_LEVEL || 'silent' });
+  let sock = null;
+  let selfIds = [];
+  let reconnectAttempts = 0;
+  let pairingRequested = false;
+
+  const isSelf = (jid) => !!jid && selfIds.some((id) => areJidsSameUser(id, jid));
+
+  async function connect() {
+    const { state, saveCreds } = await useMultiFileAuthState(config.authDir);
+    const { version } = await fetchLatestBaileysVersion().catch(() => ({}));
+
+    sock = makeWASocket({
+      version,
+      logger: baileysLogger,
+      auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, baileysLogger) },
+      browser: Browsers.ubuntu('Chrome'),
+      markOnlineOnConnect: false, // keep the owner's phone notifications working
+      syncFullHistory: false,
+      generateHighQualityLinkPreview: false,
+    });
+    const current = sock;
+
+    current.ev.on('creds.update', saveCreds);
+    current.ev.on('connection.update', (u) => onConnectionUpdate(current, u));
+    current.ev.on('messages.upsert', ({ messages, type }) => {
+      if (type !== 'notify') return; // 'append' = history sync / backlog
+      for (const raw of messages) {
+        normalize(current, raw)
+          .then((msg) => msg && onMessage(msg))
+          .catch((err) => log.error('message handling failed:', err.message));
+      }
+    });
+  }
+
+  async function onConnectionUpdate(current, { connection, lastDisconnect, qr }) {
+    if (current !== sock) return; // stale socket
+
+    if (qr && !current.authState.creds.registered && !pairingRequested) {
+      pairingRequested = true;
+      if (!config.botNumber) {
+        log.error('BOT_NUMBER is not set in .env — needed to request a pairing code.');
+        process.exit(1);
+      }
+      try {
+        const code = await current.requestPairingCode(config.botNumber);
+        const pretty = code?.match(/.{1,4}/g)?.join('-') ?? code;
+        console.log(
+          `\n┌──────────────────────────────────────────────┐\n` +
+            `│  PAIRING CODE:  ${pretty.padEnd(29)}│\n` +
+            `└──────────────────────────────────────────────┘\n` +
+            `WhatsApp Business (bot number) → ⋮ → Linked devices → Link a device\n` +
+            `→ "Link with phone number instead" → enter the code.\n`,
+        );
+      } catch (err) {
+        log.error('Could not get a pairing code:', err.message);
+        pairingRequested = false;
+      }
+    }
+
+    if (connection === 'open') {
+      reconnectAttempts = 0;
+      pairingRequested = false;
+      selfIds = [current.user?.id, current.user?.lid].filter(Boolean);
+      log.info(`✅ WhatsApp connected as ${jidDecode(current.user?.id)?.user}`);
+    }
+
+    if (connection === 'close') {
+      const code = lastDisconnect?.error?.output?.statusCode;
+      if (code === DisconnectReason.loggedOut) {
+        log.error('🚪 Logged out from WhatsApp (device unlinked). Clearing session; restart to pair again.');
+        fs.rmSync(config.authDir, { recursive: true, force: true });
+        process.exit(EXIT_LOGGED_OUT);
+      }
+      const delay =
+        code === DisconnectReason.restartRequired ? 0 : Math.min(60_000, 2000 * 2 ** reconnectAttempts++);
+      log.warn(`🔌 WhatsApp connection closed (${code ?? 'unknown'}); reconnecting in ${delay / 1000}s`);
+      setTimeout(() => connect().catch((e) => log.error('reconnect failed:', e.message)), delay);
+    }
+  }
+
+  /** Resolve a sender to a phone number, using the LID<->PN mapping when WhatsApp hides the number. */
+  async function senderNumber(current, jid, altJid) {
+    for (const j of [altJid, jid]) {
+      if (j && j.endsWith('@s.whatsapp.net')) return jidDecode(j)?.user ?? null;
+    }
+    const lid = [jid, altJid].find((j) => j?.endsWith('@lid'));
+    if (lid) {
+      const pn = await current.signalRepository?.lidMapping?.getPNForLID?.(lid).catch(() => null);
+      if (pn) return jidDecode(pn)?.user ?? null;
+    }
+    return null;
+  }
+
+  /** Baileys message -> IncomingMessage (or null to skip). */
+  async function normalize(current, raw) {
+    const { key } = raw;
+    const chatId = key?.remoteJid;
+    if (!chatId || key.fromMe) return null;
+    if (isJidStatusBroadcast(chatId) || isJidBroadcast(chatId) || isJidNewsletter(chatId)) return null;
+
+    // Backlog guard: after a reconnect WhatsApp delivers queued messages; ignore stale ones.
+    const timestamp = Number(raw.messageTimestamp || 0);
+    if (timestamp && Date.now() / 1000 - timestamp > config.maxMessageAgeS) return null;
+
+    const content = normalizeMessageContent(raw.message);
+    if (!content) return null;
+    let text =
+      content.conversation ||
+      content.extendedTextMessage?.text ||
+      content.imageMessage?.caption ||
+      content.videoMessage?.caption ||
+      content.documentMessage?.caption ||
+      '';
+    if (!text.trim()) return null;
+
+    const contextInfo = Object.values(content).find((v) => v && typeof v === 'object' && v.contextInfo)?.contextInfo;
+    const mentionsBot = (contextInfo?.mentionedJid || []).some(isSelf);
+    const repliesToBot = isSelf(contextInfo?.participant);
+
+    // remove "@<bot>" tokens from the text
+    for (const id of selfIds) {
+      const user = jidDecode(id)?.user;
+      if (user) text = text.replaceAll(`@${user}`, ' ');
+    }
+
+    const isGroup = !!isJidGroup(chatId);
+    const jid = isGroup ? key.participant : chatId;
+    const altJid = isGroup ? key.participantAlt : key.remoteJidAlt;
+    const number = await senderNumber(current, jid, altJid);
+
+    return {
+      id: key.id,
+      chatId,
+      isGroup,
+      text: text.replace(/\s+/g, ' ').trim(),
+      timestamp,
+      sender: { jid, number, name: raw.pushName || number || 'Someone' },
+      mentionsBot,
+      repliesToBot,
+      raw,
+    };
+  }
+
+  const io = {
+    async reply(msg, text) {
+      return sock.sendMessage(msg.chatId, { text }, { quoted: msg.raw });
+    },
+    async sendText(chatId, text) {
+      return sock.sendMessage(chatId, { text });
+    },
+    /** Edit a message the bot sent (used for streaming replies later). */
+    async editText(chatId, key, text) {
+      return sock.sendMessage(chatId, { text, edit: key });
+    },
+    async setTyping(chatId, on) {
+      await sock?.sendPresenceUpdate(on ? 'composing' : 'paused', chatId).catch(() => {});
+    },
+  };
+
+  return { connect, io };
+}

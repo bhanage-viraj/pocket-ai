@@ -1,0 +1,35 @@
+{"text": "note: meeting with prof shifted to 4pm thursday", "intent": "save_note", "fields": {"note": {"contains": ["4pm"]}, "project": null}, "tags": ["en"]}
+{"text": "remember that my laptop warranty ends in march", "intent": "save_note", "fields": {"note": {"contains": ["warranty"]}, "project": null}, "tags": ["en"]}
+{"text": "yaad rakhna, mummy ka birthday 12 june ko hai", "intent": "save_note", "fields": {"note": {"contains": ["12june", "birthday"]}, "project": null}, "tags": ["hinglish"]}
+{"text": "todo for pocket-ai: add rate limit per group", "intent": "save_note", "fields": {"note": {"contains": ["ratelimit"]}, "project": "pocket-ai"}, "tags": ["en"]}
+{"text": "jot this down - router ip is 192.168.0.1", "intent": "save_note", "fields": {"note": {"contains": ["19216801"]}, "project": null}, "tags": ["en"]}
+{"text": "note for expense tracker: categories should be editable", "intent": "save_note", "fields": {"note": {"contains": ["categor"]}, "project": "expense tracker"}, "tags": ["en"]}
+{"text": "likh le, gym fees due on 5th", "intent": "save_note", "fields": {"note": {"contains": ["gym"]}, "project": null}, "tags": ["hinglish"]}
+{"text": "dont forget to renew domain before 20 dec", "intent": "save_note", "fields": {"note": {"contains": ["domain"]}, "project": null}, "tags": ["en", "typo"]}
+{"text": "idea: pocket ai could summarize group chats every night", "intent": "save_note", "fields": {"note": {"contains": ["summar"]}, "project": "pocket ai"}, "tags": ["en"]}
+{"text": "note kar lo: parking slot B-14", "intent": "save_note", "fields": {"note": {"contains": ["b14"]}, "project": null}, "tags": ["hinglish"]}
+{"text": "remember the car service is due at 40000 km", "intent": "save_note", "fields": {"note": {"contains": ["40000"]}, "project": null}, "tags": ["en"]}
+{"text": "thesis note: use bleu and rouge for eval", "intent": "save_note", "fields": {"note": {"contains": ["bleu"]}, "project": "thesis"}, "tags": ["en"]}
+{"text": "mat bhoolna ki aadhar update karna hai", "intent": "save_note", "fields": {"note": {"contains": ["aadhar"]}, "project": null}, "tags": ["hinglish"]}
+{"text": "write down: passport appointment 14 nov 10:30", "intent": "save_note", "fields": {"note": {"contains": ["passport"]}, "project": null}, "tags": ["en"]}
+{"text": "remind me later that i need to call the bank", "intent": "save_note", "fields": {"note": {"contains": ["bank"]}, "project": null}, "tags": ["en"]}
+{"text": "note: llama-server crashes if ctx > 8192 on phone, for pocket-ai", "intent": "save_note", "fields": {"note": {"contains": ["8192", "crash"]}, "project": "pocket-ai"}, "tags": ["en"]}
+{"text": "Todo: buy hdmi cable", "intent": "save_note", "fields": {"note": {"contains": ["hdmi"]}, "project": null}, "tags": ["en"]}
+{"text": "yaad rakh, rahul ko 500 dene hai", "intent": "save_note", "fields": {"note": {"contains": ["500"]}, "project": null}, "tags": ["hinglish"]}
+{"text": "add a note that the api key for maps is in my drive folder", "intent": "save_note", "fields": {"note": {"contains": ["apikey", "drive"]}, "project": null}, "tags": ["en"]}
+{"text": "note this, client wants dark mode by friday for the food delivery app", "intent": "save_note", "fields": {"note": {"contains": ["darkmode"]}, "project": {"any": ["food delivery app", "food delivery"]}}, "tags": ["en"]}
+{"text": "imp note: dentist on saturday 11am", "intent": "save_note", "fields": {"note": {"contains": ["dentist"]}, "project": null}, "tags": ["en"]}
+{"text": "remember: shoe size 9 uk", "intent": "save_note", "fields": {"note": {"contains": ["9"]}, "project": null}, "tags": ["en"]}
+{"text": "dsa prep note - revise dp and graphs this week", "intent": "save_note", "fields": {"note": {"contains": ["dp", "graph"]}, "project": {"any": ["dsa prep", "dsa"]}}, "tags": ["en"]}
+{"text": "kuch likhna hai: hostel wifi ka password hostel@2024", "intent": "save_note", "fields": {"note": {"contains": ["hostel2024"]}, "project": null}, "tags": ["hinglish"]}
+{"text": "note to self, sleep before 1am", "intent": "save_note", "fields": {"note": {"contains": ["sleep"]}, "project": null}, "tags": ["en"]}
+{"text": "ek note bana: drone project me battery 4s lena hai", "intent": "save_note", "fields": {"note": {"contains": ["battery", "4s"]}, "project": {"any": ["drone project", "drone"]}}, "tags": ["hinglish"]}
+{"text": "noted for hackathon: team name is byte bandits", "intent": "save_note", "fields": {"note": {"contains": ["bytebandits"]}, "project": "hackathon"}, "tags": ["en"]}
+{"text": "please remember that i'm allergic to peanuts", "intent": "save_note", "fields": {"note": {"contains": ["peanut"]}, "project": null}, "tags": ["en"]}
+{"text": "save a note: invoice #4512 paid on 1 nov", "intent": "save_note", "fields": {"note": {"contains": ["4512"]}, "project": null}, "tags": ["en", "confusable"]}
+{"text": "idea for portfolio site - add a dark/light toggle", "intent": "save_note", "fields": {"note": {"contains": ["toggle"]}, "project": {"any": ["portfolio site", "portfolio"]}}, "tags": ["en"]}
+{"text": "jot: electricity bill 1840 rs", "intent": "save_note", "fields": {"note": {"contains": ["1840"]}, "project": null}, "tags": ["en"]}
+{"text": "dhyan rakhna, friday ko office band hai", "intent": "save_note", "fields": {"note": {"contains": ["friday", "office"]}, "project": null}, "tags": ["hinglish"]}
+{"text": "todo pocket-ai - write the readme benchmark table", "intent": "save_note", "fields": {"note": {"contains": ["readme", "benchmark"]}, "project": "pocket-ai"}, "tags": ["en"]}
+{"text": "remember my locker code is 2719", "intent": "save_note", "fields": {"note": {"contains": ["2719"]}, "project": null}, "tags": ["en"]}
+{"text": "notes: the bus pass expires next month", "intent": "save_note", "fields": {"note": {"contains": ["buspass"]}, "project": null}, "tags": ["en"]}

@@ -1,0 +1,45 @@
+{"text": "hi", "intent": "chat", "tags": ["en"]}
+{"text": "kaise ho?", "intent": "chat", "tags": ["hinglish"]}
+{"text": "what's the capital of australia", "intent": "chat", "tags": ["en"]}
+{"text": "explain RAG in simple words", "intent": "chat", "tags": ["en"]}
+{"text": "how do i save a file in vim?", "intent": "chat", "tags": ["en", "confusable"]}
+{"text": "what is a good note taking app?", "intent": "chat", "tags": ["en", "confusable"]}
+{"text": "can you remember things between chats?", "intent": "chat", "tags": ["en", "confusable"]}
+{"text": "is this link safe? https://bit.ly/3xYz", "intent": "chat", "tags": ["en", "confusable", "url"]}
+{"text": "what does this repo do https://github.com/ggml-org/llama.cpp", "intent": "chat", "tags": ["en", "confusable", "url"]}
+{"text": "lol https://youtu.be/dQw4w9WgXcQ", "intent": "chat", "tags": ["en", "confusable", "url"]}
+{"text": "bhai mera project fail ho gaya 😭", "intent": "chat", "tags": ["hinglish"]}
+{"text": "write a poem about chai", "intent": "chat", "tags": ["en"]}
+{"text": "translate 'good morning' to marathi", "intent": "chat", "tags": ["en"]}
+{"text": "how to bookmark pages in chrome?", "intent": "chat", "tags": ["en", "confusable"]}
+{"text": "suggest some youtube channels for learning dsa", "intent": "chat", "tags": ["en", "confusable"]}
+{"text": "kal exam hai, motivate kar de", "intent": "chat", "tags": ["hinglish"]}
+{"text": "what is 17*23", "intent": "chat", "tags": ["en"]}
+{"text": "summarize: the meeting went well and we agreed to ship on monday", "intent": "chat", "tags": ["en", "confusable"]}
+{"text": "tell me a joke", "intent": "chat", "tags": ["en"]}
+{"text": "which is better for my pocket-ai project, gemma or llama?", "intent": "chat", "tags": ["en", "confusable"]}
+{"text": "can you explain this article to me https://en.wikipedia.org/wiki/Transformer_(deep_learning_architecture)", "intent": "chat", "tags": ["en", "confusable", "url"]}
+{"text": "thanks bro", "intent": "chat", "tags": ["en"]}
+{"text": "ok", "intent": "chat", "tags": ["en"]}
+{"text": "who are you?", "intent": "chat", "tags": ["en"]}
+{"text": "kya tum internet use kar sakte ho?", "intent": "chat", "tags": ["hinglish"]}
+{"text": "how much RAM does a 4B model need?", "intent": "chat", "tags": ["en"]}
+{"text": "give me ideas for my final year project", "intent": "chat", "tags": ["en", "confusable"]}
+{"text": "I keep forgetting stuff, any tips to remember better?", "intent": "chat", "tags": ["en", "confusable"]}
+{"text": "what's the difference between a note and a memo", "intent": "chat", "tags": ["en", "confusable"]}
+{"text": "my friend sent me this https://www.instagram.com/reel/abc123 so funny", "intent": "chat", "tags": ["en", "confusable", "url"]}
+{"text": "good night", "intent": "chat", "tags": ["en"]}
+{"text": "is it going to rain tomorrow?", "intent": "chat", "tags": ["en"]}
+{"text": "debug this: TypeError: cannot read properties of undefined", "intent": "chat", "tags": ["en"]}
+{"text": "hinglish me batao, recursion kya hota hai", "intent": "chat", "tags": ["hinglish"]}
+{"text": "do you like music?", "intent": "chat", "tags": ["en"]}
+{"text": "should i learn rust or go?", "intent": "chat", "tags": ["en"]}
+{"text": "aaj kya khaun? kuch suggest kar", "intent": "chat", "tags": ["hinglish"]}
+{"text": "how do i write good notes in class?", "intent": "chat", "tags": ["en", "confusable"]}
+{"text": "what did i tell you earlier?", "intent": "chat", "tags": ["en"]}
+{"text": "why is my phone heating up", "intent": "chat", "tags": ["en"]}
+{"text": "rate my bio: cs student who loves chai and code", "intent": "chat", "tags": ["en"]}
+{"text": "convert 5 km to miles", "intent": "chat", "tags": ["en"]}
+{"text": "ye video kis baare me hai? https://youtu.be/aircAruvnKk", "intent": "chat", "tags": ["hinglish", "confusable", "url"]}
+{"text": "help me plan a goa trip", "intent": "chat", "tags": ["en"]}
+{"text": "write a linkedin post about my internship", "intent": "chat", "tags": ["en", "confusable"]}

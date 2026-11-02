@@ -1,0 +1,24 @@
+{
+  "name": "pocket-ai",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "A WhatsApp AI assistant that runs 100% on an Android phone: Baileys + llama.cpp + a task router.",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/index.js",
+    "console": "node --disable-warning=ExperimentalWarning src/dev/console.js",
+    "test": "node --disable-warning=ExperimentalWarning --test 'test/*.test.js'",
+    "eval": "node --disable-warning=ExperimentalWarning eval/run.js",
+    "eval:report": "node eval/report.js",
+    "bench": "bash bench/llama-bench.sh"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "dependencies": {
+    "baileys": "7.0.0-rc14",
+    "pino": "^9.5.0"
+  },
+  "license": "MIT"
+}

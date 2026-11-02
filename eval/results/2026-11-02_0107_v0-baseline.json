@@ -1,0 +1,779 @@
+{
+  "label": "v0-baseline",
+  "model": "gemma-3-1b-it-Q4_K_M",
+  "prefilter": true,
+  "promptVersion": "f2034cc2",
+  "taskNames": [
+    "save_note",
+    "save_resource",
+    "chat"
+  ],
+  "url": "http://127.0.0.1:8080",
+  "date": "2026-11-02T01:07:20.238Z",
+  "n": 120,
+  "intentAccuracy": 87.5,
+  "fieldAccuracy": 61,
+  "exactMatch": 64.2,
+  "perTask": {
+    "save_note": {
+      "n": 35,
+      "recall": 74.3,
+      "precision": 92.9,
+      "f1": 82.5,
+      "fields": {
+        "note": 74.3,
+        "project": 37.1
+      }
+    },
+    "save_resource": {
+      "n": 40,
+      "recall": 92.5,
+      "precision": 94.9,
+      "f1": 93.7,
+      "fields": {
+        "project": 56.4,
+        "topic": 81.5
+      }
+    },
+    "chat": {
+      "n": 45,
+      "recall": 93.3,
+      "precision": 79.2,
+      "f1": 85.7,
+      "fields": {}
+    }
+  },
+  "byTag": {
+    "en": {
+      "n": 95,
+      "accuracy": 91.6
+    },
+    "hinglish": {
+      "n": 25,
+      "accuracy": 72
+    },
+    "confusable": {
+      "n": 21,
+      "accuracy": 85.7
+    },
+    "url": {
+      "n": 6,
+      "accuracy": 66.7
+    },
+    "typo": {
+      "n": 2,
+      "accuracy": 100
+    },
+    "vague": {
+      "n": 5,
+      "accuracy": 100
+    },
+    "no-url": {
+      "n": 1,
+      "accuracy": 100
+    }
+  },
+  "latencyMs": {
+    "all": {
+      "avg": 142,
+      "p50": 175,
+      "p95": 280
+    },
+    "modelCalls": {
+      "avg": 199,
+      "p50": 203,
+      "p95": 300
+    }
+  },
+  "prefilterSkipPct": 28.3,
+  "genTokPerSec": 102.8,
+  "avgOutputTokens": 17.8,
+  "avgNewPromptTokens": 18.3,
+  "cacheHitPct": 97.1,
+  "failures": [
+    {
+      "id": "chat.jsonl:9",
+      "text": "what does this repo do https://github.com/ggml-org/llama.cpp",
+      "expected": "chat",
+      "predicted": "save_resource",
+      "fields": []
+    },
+    {
+      "id": "chat.jsonl:43",
+      "text": "ye video kis baare me hai? https://youtu.be/aircAruvnKk",
+      "expected": "chat",
+      "predicted": "save_resource",
+      "fields": []
+    },
+    {
+      "id": "chat.jsonl:45",
+      "text": "write a linkedin post about my internship",
+      "expected": "chat",
+      "predicted": "save_note",
+      "fields": []
+    },
+    {
+      "id": "save_note.jsonl:1",
+      "text": "note: meeting with prof shifted to 4pm thursday",
+      "expected": "save_note",
+      "predicted": "save_note",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": "pocket-ai"
+        }
+      ]
+    },
+    {
+      "id": "save_note.jsonl:2",
+      "text": "remember that my laptop warranty ends in march",
+      "expected": "save_note",
+      "predicted": "save_note",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": "pocket-ai"
+        }
+      ]
+    },
+    {
+      "id": "save_note.jsonl:3",
+      "text": "yaad rakhna, mummy ka birthday 12 june ko hai",
+      "expected": "save_note",
+      "predicted": "save_note",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": "pocket-ai"
+        }
+      ]
+    },
+    {
+      "id": "save_note.jsonl:6",
+      "text": "note for expense tracker: categories should be editable",
+      "expected": "save_note",
+      "predicted": "save_note",
+      "fields": [
+        {
+          "field": "project",
+          "expected": "expense tracker",
+          "actual": "pocket-ai"
+        }
+      ]
+    },
+    {
+      "id": "save_note.jsonl:8",
+      "text": "dont forget to renew domain before 20 dec",
+      "expected": "save_note",
+      "predicted": "save_note",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": "pocket-ai"
+        }
+      ]
+    },
+    {
+      "id": "save_note.jsonl:9",
+      "text": "idea: pocket ai could summarize group chats every night",
+      "expected": "save_note",
+      "predicted": "chat",
+      "fields": [
+        {
+          "field": "note",
+          "expected": {
+            "contains": [
+              "summar"
+            ]
+          },
+          "actual": null
+        },
+        {
+          "field": "project",
+          "expected": "pocket ai",
+          "actual": null
+        }
+      ]
+    },
+    {
+      "id": "save_note.jsonl:11",
+      "text": "remember the car service is due at 40000 km",
+      "expected": "save_note",
+      "predicted": "save_note",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": "pocket-ai"
+        }
+      ]
+    },
+    {
+      "id": "save_note.jsonl:13",
+      "text": "mat bhoolna ki aadhar update karna hai",
+      "expected": "save_note",
+      "predicted": "chat",
+      "fields": [
+        {
+          "field": "note",
+          "expected": {
+            "contains": [
+              "aadhar"
+            ]
+          },
+          "actual": null
+        },
+        {
+          "field": "project",
+          "expected": null,
+          "actual": null
+        }
+      ]
+    },
+    {
+      "id": "save_note.jsonl:14",
+      "text": "write down: passport appointment 14 nov 10:30",
+      "expected": "save_note",
+      "predicted": "save_note",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": "passport"
+        }
+      ]
+    },
+    {
+      "id": "save_note.jsonl:15",
+      "text": "remind me later that i need to call the bank",
+      "expected": "save_note",
+      "predicted": "save_note",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": "bank call"
+        }
+      ]
+    },
+    {
+      "id": "save_note.jsonl:16",
+      "text": "note: llama-server crashes if ctx > 8192 on phone, for pocket-ai",
+      "expected": "save_note",
+      "predicted": "chat",
+      "fields": [
+        {
+          "field": "note",
+          "expected": {
+            "contains": [
+              "8192",
+              "crash"
+            ]
+          },
+          "actual": null
+        },
+        {
+          "field": "project",
+          "expected": "pocket-ai",
+          "actual": null
+        }
+      ]
+    },
+    {
+      "id": "save_note.jsonl:18",
+      "text": "yaad rakh, rahul ko 500 dene hai",
+      "expected": "save_note",
+      "predicted": "save_note",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": "budget planning"
+        }
+      ]
+    },
+    {
+      "id": "save_note.jsonl:19",
+      "text": "add a note that the api key for maps is in my drive folder",
+      "expected": "save_note",
+      "predicted": "save_note",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": "pocket-ai"
+        }
+      ]
+    },
+    {
+      "id": "save_note.jsonl:20",
+      "text": "note this, client wants dark mode by friday for the food delivery app",
+      "expected": "save_note",
+      "predicted": "save_note",
+      "fields": [
+        {
+          "field": "project",
+          "expected": {
+            "any": [
+              "food delivery app",
+              "food delivery"
+            ]
+          },
+          "actual": null
+        }
+      ]
+    },
+    {
+      "id": "save_note.jsonl:21",
+      "text": "imp note: dentist on saturday 11am",
+      "expected": "save_note",
+      "predicted": "save_note",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": "pocket-ai"
+        }
+      ]
+    },
+    {
+      "id": "save_note.jsonl:24",
+      "text": "kuch likhna hai: hostel wifi ka password hostel@2024",
+      "expected": "save_note",
+      "predicted": "chat",
+      "fields": [
+        {
+          "field": "note",
+          "expected": {
+            "contains": [
+              "hostel2024"
+            ]
+          },
+          "actual": null
+        },
+        {
+          "field": "project",
+          "expected": null,
+          "actual": null
+        }
+      ]
+    },
+    {
+      "id": "save_note.jsonl:27",
+      "text": "noted for hackathon: team name is byte bandits",
+      "expected": "save_note",
+      "predicted": "chat",
+      "fields": [
+        {
+          "field": "note",
+          "expected": {
+            "contains": [
+              "bytebandits"
+            ]
+          },
+          "actual": null
+        },
+        {
+          "field": "project",
+          "expected": "hackathon",
+          "actual": null
+        }
+      ]
+    },
+    {
+      "id": "save_note.jsonl:28",
+      "text": "please remember that i'm allergic to peanuts",
+      "expected": "save_note",
+      "predicted": "chat",
+      "fields": [
+        {
+          "field": "note",
+          "expected": {
+            "contains": [
+              "peanut"
+            ]
+          },
+          "actual": null
+        },
+        {
+          "field": "project",
+          "expected": null,
+          "actual": null
+        }
+      ]
+    },
+    {
+      "id": "save_note.jsonl:30",
+      "text": "idea for portfolio site - add a dark/light toggle",
+      "expected": "save_note",
+      "predicted": "chat",
+      "fields": [
+        {
+          "field": "note",
+          "expected": {
+            "contains": [
+              "toggle"
+            ]
+          },
+          "actual": null
+        },
+        {
+          "field": "project",
+          "expected": {
+            "any": [
+              "portfolio site",
+              "portfolio"
+            ]
+          },
+          "actual": null
+        }
+      ]
+    },
+    {
+      "id": "save_note.jsonl:32",
+      "text": "dhyan rakhna, friday ko office band hai",
+      "expected": "save_note",
+      "predicted": "chat",
+      "fields": [
+        {
+          "field": "note",
+          "expected": {
+            "contains": [
+              "friday",
+              "office"
+            ]
+          },
+          "actual": null
+        },
+        {
+          "field": "project",
+          "expected": null,
+          "actual": null
+        }
+      ]
+    },
+    {
+      "id": "save_note.jsonl:34",
+      "text": "remember my locker code is 2719",
+      "expected": "save_note",
+      "predicted": "chat",
+      "fields": [
+        {
+          "field": "note",
+          "expected": {
+            "contains": [
+              "2719"
+            ]
+          },
+          "actual": null
+        },
+        {
+          "field": "project",
+          "expected": null,
+          "actual": null
+        }
+      ]
+    },
+    {
+      "id": "save_note.jsonl:35",
+      "text": "notes: the bus pass expires next month",
+      "expected": "save_note",
+      "predicted": "save_note",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": "pocket-ai"
+        }
+      ]
+    },
+    {
+      "id": "save_resource.jsonl:2",
+      "text": "save this https://arxiv.org/abs/2005.11401",
+      "expected": "save_resource",
+      "predicted": "save_resource",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": "research"
+        }
+      ]
+    },
+    {
+      "id": "save_resource.jsonl:6",
+      "text": "read later: https://martinfowler.com/articles/microservices.html",
+      "expected": "save_resource",
+      "predicted": "save_resource",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": "martinfowler"
+        },
+        {
+          "field": "topic",
+          "expected": {
+            "contains": [
+              "microservice"
+            ]
+          },
+          "actual": "martinfowler"
+        }
+      ]
+    },
+    {
+      "id": "save_resource.jsonl:7",
+      "text": "pls save ye link https://huggingface.co/docs/transformers/index",
+      "expected": "save_resource",
+      "predicted": "save_resource",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": "machine learning"
+        }
+      ]
+    },
+    {
+      "id": "save_resource.jsonl:8",
+      "text": "https://www.youtube.com/watch?v=kCc8FmEb1nY andrej karpathy gpt from scratch, save for later",
+      "expected": "save_resource",
+      "predicted": "save_resource",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": "GPT"
+        }
+      ]
+    },
+    {
+      "id": "save_resource.jsonl:13",
+      "text": "add to resources: https://tailwindcss.com/docs",
+      "expected": "save_resource",
+      "predicted": "save_resource",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": "resources"
+        }
+      ]
+    },
+    {
+      "id": "save_resource.jsonl:15",
+      "text": "isko sambhal ke rakh, prompt engineering guide https://www.promptingguide.ai",
+      "expected": "save_resource",
+      "predicted": "chat",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": null
+        },
+        {
+          "field": "topic",
+          "expected": {
+            "contains": [
+              "prompt"
+            ]
+          },
+          "actual": null
+        }
+      ]
+    },
+    {
+      "id": "save_resource.jsonl:18",
+      "text": "this video explains rust ownership really well https://youtu.be/VFIOSWy93H0 watch later",
+      "expected": "save_resource",
+      "predicted": "save_resource",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": "rust learning"
+        }
+      ]
+    },
+    {
+      "id": "save_resource.jsonl:20",
+      "text": "bhai ye blog padhna hai baad me https://overreacted.io/a-complete-guide-to-useeffect/",
+      "expected": "save_resource",
+      "predicted": "chat",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": null
+        }
+      ]
+    },
+    {
+      "id": "save_resource.jsonl:21",
+      "text": "save https://docs.python.org/3/library/asyncio.html",
+      "expected": "save_resource",
+      "predicted": "save_resource",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": "Python documentation"
+        }
+      ]
+    },
+    {
+      "id": "save_resource.jsonl:24",
+      "text": "isse later dekhenge, quantization explained https://huggingface.co/blog/4bit-transformers-bitsandbytes",
+      "expected": "save_resource",
+      "predicted": "save_resource",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": "quantization"
+        }
+      ]
+    },
+    {
+      "id": "save_resource.jsonl:26",
+      "text": "https://www.sqlite.org/lang_upsert.html upsert syntax, useful for pocket-ai db",
+      "expected": "save_resource",
+      "predicted": "save_resource",
+      "fields": [
+        {
+          "field": "topic",
+          "expected": {
+            "contains": [
+              "upsert",
+              "sqlite"
+            ]
+          },
+          "actual": "database schema"
+        }
+      ]
+    },
+    {
+      "id": "save_resource.jsonl:29",
+      "text": "remember this site for icons https://lucide.dev",
+      "expected": "save_resource",
+      "predicted": "save_resource",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": "icon generator"
+        },
+        {
+          "field": "topic",
+          "expected": {
+            "contains": [
+              "icon"
+            ]
+          },
+          "actual": "lucide"
+        }
+      ]
+    },
+    {
+      "id": "save_resource.jsonl:30",
+      "text": "great podcast ep on startups https://open.spotify.com/episode/abc save it",
+      "expected": "save_resource",
+      "predicted": "save_resource",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": "startup podcast"
+        }
+      ]
+    },
+    {
+      "id": "save_resource.jsonl:32",
+      "text": "Pocket AI ke liye kaam aayega: https://termux.dev/en/ termux docs",
+      "expected": "save_resource",
+      "predicted": "save_note",
+      "fields": [
+        {
+          "field": "project",
+          "expected": "pocket ai",
+          "actual": "Pocket AI"
+        },
+        {
+          "field": "topic",
+          "expected": {
+            "contains": [
+              "termux"
+            ]
+          },
+          "actual": null
+        }
+      ]
+    },
+    {
+      "id": "save_resource.jsonl:33",
+      "text": "bookmark this for later https://web.dev/articles/vitals",
+      "expected": "save_resource",
+      "predicted": "save_resource",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": "weekend plans"
+        }
+      ]
+    },
+    {
+      "id": "save_resource.jsonl:35",
+      "text": "pls keep https://www.figma.com/community/file/123 ui kit for the food delivery app",
+      "expected": "save_resource",
+      "predicted": "save_resource",
+      "fields": [
+        {
+          "field": "project",
+          "expected": {
+            "any": [
+              "food delivery app",
+              "food delivery"
+            ]
+          },
+          "actual": "food delivery app ui kit"
+        }
+      ]
+    },
+    {
+      "id": "save_resource.jsonl:36",
+      "text": "https://eli.thegreenplace.net/2023/ml-in-go-with-a-python-sidecar/ go + python ml, useful",
+      "expected": "save_resource",
+      "predicted": "save_resource",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": "Python ML"
+        }
+      ]
+    },
+    {
+      "id": "save_resource.jsonl:40",
+      "text": "add https://neetcode.io/roadmap to my dsa prep list",
+      "expected": "save_resource",
+      "predicted": "save_resource",
+      "fields": [
+        {
+          "field": "project",
+          "expected": {
+            "contains": [
+              "dsa"
+            ]
+          },
+          "actual": "neetcode prep list"
+        }
+      ]
+    }
+  ]
+}

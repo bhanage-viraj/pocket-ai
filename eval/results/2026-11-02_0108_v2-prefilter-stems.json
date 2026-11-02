@@ -1,0 +1,500 @@
+{
+  "label": "v2-prefilter-stems",
+  "model": "gemma-3-1b-it-Q4_K_M",
+  "prefilter": true,
+  "promptVersion": "bdeeb646",
+  "taskNames": [
+    "save_note",
+    "save_resource",
+    "chat"
+  ],
+  "url": "http://127.0.0.1:8080",
+  "date": "2026-11-02T01:08:48.990Z",
+  "n": 120,
+  "intentAccuracy": 91.7,
+  "fieldAccuracy": 78.7,
+  "exactMatch": 80,
+  "perTask": {
+    "save_note": {
+      "n": 35,
+      "recall": 88.6,
+      "precision": 93.9,
+      "f1": 91.2,
+      "fields": {
+        "note": 88.6,
+        "project": 80
+      }
+    },
+    "save_resource": {
+      "n": 40,
+      "recall": 92.5,
+      "precision": 94.9,
+      "f1": 93.7,
+      "fields": {
+        "project": 71.8,
+        "topic": 74.1
+      }
+    },
+    "chat": {
+      "n": 45,
+      "recall": 93.3,
+      "precision": 87.5,
+      "f1": 90.3,
+      "fields": {}
+    }
+  },
+  "byTag": {
+    "en": {
+      "n": 95,
+      "accuracy": 92.6
+    },
+    "hinglish": {
+      "n": 25,
+      "accuracy": 88
+    },
+    "confusable": {
+      "n": 21,
+      "accuracy": 81
+    },
+    "url": {
+      "n": 6,
+      "accuracy": 66.7
+    },
+    "typo": {
+      "n": 2,
+      "accuracy": 100
+    },
+    "vague": {
+      "n": 5,
+      "accuracy": 100
+    },
+    "no-url": {
+      "n": 1,
+      "accuracy": 100
+    }
+  },
+  "latencyMs": {
+    "all": {
+      "avg": 151,
+      "p50": 190,
+      "p95": 300
+    },
+    "modelCalls": {
+      "avg": 202,
+      "p50": 208,
+      "p95": 301
+    }
+  },
+  "prefilterSkipPct": 25,
+  "prefilterMisses": [],
+  "genTokPerSec": 102,
+  "avgOutputTokens": 18,
+  "avgNewPromptTokens": 18.2,
+  "cacheHitPct": 97.7,
+  "failures": [
+    {
+      "id": "chat.jsonl:9",
+      "text": "what does this repo do https://github.com/ggml-org/llama.cpp",
+      "expected": "chat",
+      "predicted": "save_resource",
+      "fields": []
+    },
+    {
+      "id": "chat.jsonl:43",
+      "text": "ye video kis baare me hai? https://youtu.be/aircAruvnKk",
+      "expected": "chat",
+      "predicted": "save_resource",
+      "fields": []
+    },
+    {
+      "id": "chat.jsonl:45",
+      "text": "write a linkedin post about my internship",
+      "expected": "chat",
+      "predicted": "save_note",
+      "fields": []
+    },
+    {
+      "id": "save_note.jsonl:9",
+      "text": "idea: pocket ai could summarize group chats every night",
+      "expected": "save_note",
+      "predicted": "chat",
+      "fields": [
+        {
+          "field": "note",
+          "expected": {
+            "contains": [
+              "summar"
+            ]
+          },
+          "actual": null
+        },
+        {
+          "field": "project",
+          "expected": "pocket ai",
+          "actual": null
+        }
+      ]
+    },
+    {
+      "id": "save_note.jsonl:12",
+      "text": "thesis note: use bleu and rouge for eval",
+      "expected": "save_note",
+      "predicted": "save_note",
+      "fields": [
+        {
+          "field": "project",
+          "expected": "thesis",
+          "actual": null
+        }
+      ]
+    },
+    {
+      "id": "save_note.jsonl:13",
+      "text": "mat bhoolna ki aadhar update karna hai",
+      "expected": "save_note",
+      "predicted": "save_note",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": "Aadhar"
+        }
+      ]
+    },
+    {
+      "id": "save_note.jsonl:16",
+      "text": "note: llama-server crashes if ctx > 8192 on phone, for pocket-ai",
+      "expected": "save_note",
+      "predicted": "chat",
+      "fields": [
+        {
+          "field": "note",
+          "expected": {
+            "contains": [
+              "8192",
+              "crash"
+            ]
+          },
+          "actual": null
+        },
+        {
+          "field": "project",
+          "expected": "pocket-ai",
+          "actual": null
+        }
+      ]
+    },
+    {
+      "id": "save_note.jsonl:24",
+      "text": "kuch likhna hai: hostel wifi ka password hostel@2024",
+      "expected": "save_note",
+      "predicted": "save_note",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": "hostel"
+        }
+      ]
+    },
+    {
+      "id": "save_note.jsonl:27",
+      "text": "noted for hackathon: team name is byte bandits",
+      "expected": "save_note",
+      "predicted": "chat",
+      "fields": [
+        {
+          "field": "note",
+          "expected": {
+            "contains": [
+              "bytebandits"
+            ]
+          },
+          "actual": null
+        },
+        {
+          "field": "project",
+          "expected": "hackathon",
+          "actual": null
+        }
+      ]
+    },
+    {
+      "id": "save_note.jsonl:30",
+      "text": "idea for portfolio site - add a dark/light toggle",
+      "expected": "save_note",
+      "predicted": "chat",
+      "fields": [
+        {
+          "field": "note",
+          "expected": {
+            "contains": [
+              "toggle"
+            ]
+          },
+          "actual": null
+        },
+        {
+          "field": "project",
+          "expected": {
+            "any": [
+              "portfolio site",
+              "portfolio"
+            ]
+          },
+          "actual": null
+        }
+      ]
+    },
+    {
+      "id": "save_resource.jsonl:4",
+      "text": "ye tutorial bahut acha hai docker pe https://youtu.be/3c-iBn73dDE, devops project ke liye rakh le",
+      "expected": "save_resource",
+      "predicted": "save_resource",
+      "fields": [
+        {
+          "field": "project",
+          "expected": {
+            "any": [
+              "devops",
+              "devops project"
+            ]
+          },
+          "actual": "Docker tutorial"
+        },
+        {
+          "field": "topic",
+          "expected": {
+            "contains": [
+              "docker"
+            ]
+          },
+          "actual": "DevOps project"
+        }
+      ]
+    },
+    {
+      "id": "save_resource.jsonl:6",
+      "text": "read later: https://martinfowler.com/articles/microservices.html",
+      "expected": "save_resource",
+      "predicted": "save_resource",
+      "fields": [
+        {
+          "field": "topic",
+          "expected": {
+            "contains": [
+              "microservice"
+            ]
+          },
+          "actual": "MERN stack"
+        }
+      ]
+    },
+    {
+      "id": "save_resource.jsonl:15",
+      "text": "isko sambhal ke rakh, prompt engineering guide https://www.promptingguide.ai",
+      "expected": "save_resource",
+      "predicted": "chat",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": null
+        },
+        {
+          "field": "topic",
+          "expected": {
+            "contains": [
+              "prompt"
+            ]
+          },
+          "actual": null
+        }
+      ]
+    },
+    {
+      "id": "save_resource.jsonl:16",
+      "text": "good thread on system design https://x.com/someone/status/12345 save for interview prep",
+      "expected": "save_resource",
+      "predicted": "save_resource",
+      "fields": [
+        {
+          "field": "project",
+          "expected": {
+            "any": [
+              "interview prep",
+              "interview"
+            ]
+          },
+          "actual": "system design"
+        },
+        {
+          "field": "topic",
+          "expected": {
+            "contains": [
+              "system design"
+            ]
+          },
+          "actual": "interview prep"
+        }
+      ]
+    },
+    {
+      "id": "save_resource.jsonl:18",
+      "text": "this video explains rust ownership really well https://youtu.be/VFIOSWy93H0 watch later",
+      "expected": "save_resource",
+      "predicted": "save_resource",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": "rust"
+        }
+      ]
+    },
+    {
+      "id": "save_resource.jsonl:20",
+      "text": "bhai ye blog padhna hai baad me https://overreacted.io/a-complete-guide-to-useeffect/",
+      "expected": "save_resource",
+      "predicted": "chat",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": null
+        }
+      ]
+    },
+    {
+      "id": "save_resource.jsonl:24",
+      "text": "isse later dekhenge, quantization explained https://huggingface.co/blog/4bit-transformers-bitsandbytes",
+      "expected": "save_resource",
+      "predicted": "save_resource",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": "quantization"
+        },
+        {
+          "field": "topic",
+          "expected": {
+            "contains": [
+              "quantiz"
+            ]
+          },
+          "actual": "Hugging Face"
+        }
+      ]
+    },
+    {
+      "id": "save_resource.jsonl:27",
+      "text": "note this link pls https://grafana.com/docs/ for monitoring stuff",
+      "expected": "save_resource",
+      "predicted": "save_note",
+      "fields": [
+        {
+          "field": "topic",
+          "expected": {
+            "contains": [
+              "monitoring",
+              "grafana"
+            ]
+          },
+          "actual": null
+        }
+      ]
+    },
+    {
+      "id": "save_resource.jsonl:29",
+      "text": "remember this site for icons https://lucide.dev",
+      "expected": "save_resource",
+      "predicted": "save_resource",
+      "fields": [
+        {
+          "field": "topic",
+          "expected": {
+            "contains": [
+              "icon"
+            ]
+          },
+          "actual": "lucide"
+        }
+      ]
+    },
+    {
+      "id": "save_resource.jsonl:33",
+      "text": "bookmark this for later https://web.dev/articles/vitals",
+      "expected": "save_resource",
+      "predicted": "save_resource",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": "bookmark"
+        }
+      ]
+    },
+    {
+      "id": "save_resource.jsonl:35",
+      "text": "pls keep https://www.figma.com/community/file/123 ui kit for the food delivery app",
+      "expected": "save_resource",
+      "predicted": "save_resource",
+      "fields": [
+        {
+          "field": "project",
+          "expected": {
+            "any": [
+              "food delivery app",
+              "food delivery"
+            ]
+          },
+          "actual": "food delivery app UI kit"
+        }
+      ]
+    },
+    {
+      "id": "save_resource.jsonl:36",
+      "text": "https://eli.thegreenplace.net/2023/ml-in-go-with-a-python-sidecar/ go + python ml, useful",
+      "expected": "save_resource",
+      "predicted": "save_resource",
+      "fields": [
+        {
+          "field": "project",
+          "expected": null,
+          "actual": "Python ML"
+        }
+      ]
+    },
+    {
+      "id": "save_resource.jsonl:39",
+      "text": "yeh doc pocket-ai ke llama server setup ke liye https://github.com/ggml-org/llama.cpp/tree/master/tools/server",
+      "expected": "save_resource",
+      "predicted": "save_resource",
+      "fields": [
+        {
+          "field": "project",
+          "expected": "pocket-ai",
+          "actual": "doc pocket-ai"
+        }
+      ]
+    },
+    {
+      "id": "save_resource.jsonl:40",
+      "text": "add https://neetcode.io/roadmap to my dsa prep list",
+      "expected": "save_resource",
+      "predicted": "save_resource",
+      "fields": [
+        {
+          "field": "project",
+          "expected": {
+            "contains": [
+              "dsa"
+            ]
+          },
+          "actual": null
+        }
+      ]
+    }
+  ]
+}

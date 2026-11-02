@@ -1,0 +1,6 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# Termux:Boot autostart. termux-setup.sh copies this to ~/.termux/boot/pocket-ai
+termux-wake-lock
+sshd 2>/dev/null || true
+sleep 20   # let Wi-Fi come up after boot
+cd "__POCKET_DIR__" && ./scripts/start.sh
