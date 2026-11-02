@@ -117,7 +117,7 @@ npm test                    # 25 unit tests, no model needed
 | Where | How to talk to it |
 |---|---|
 | Private chat | Just message it (owner + `ALLOWED_NUMBERS`; set `DM_POLICY=all` for everyone) |
-| Group | `@Pocket …`, reply to one of its messages, or start with `/ai …` / `hey pocket …`. Otherwise it stays silent |
+| Group | `@Pocket …`, reply to one of its messages, or start with `/ai …` / `hey pocket …`. Otherwise it stays silent. Reply to anyone's message with `@Pocket` and it answers that message |
 
 | Command | |
 |---|---|

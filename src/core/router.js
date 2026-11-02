@@ -11,6 +11,12 @@ import { checkGroupTrigger } from './triggers.js';
 import { QueueFullError } from './queue.js';
 import { log } from '../util/log.js';
 
+/** Quoted message + the user's words, as one prompt. */
+export function quoteBlock(quoted, text) {
+  const q = quoted.length > 500 ? quoted.slice(0, 499) + '…' : quoted;
+  return text ? `(replying to: "${q}")\n${text}` : `Reply to this message: "${q}"`;
+}
+
 export function parseCommand(text) {
   const m = /^\/([a-z][\w-]*)\s*([\s\S]*)$/i.exec(text);
   if (!m) return null;
@@ -21,6 +27,7 @@ export function parseCommand(text) {
 /** Pure routing decision. */
 export function decide(msg, { config, commands }) {
   const isOwner = isOwnerNumber(msg.sender.number);
+  if (msg.stale) return { action: 'ignore', reason: 'stale' }; // backlog after reconnect: context only
   let text = (msg.text || '').trim();
   // a bare "@Pocket" in a group arrives empty (mention stripped) but should still get /help
   if (!text && !(msg.isGroup && msg.mentionsBot)) return { action: 'ignore', reason: 'empty' };
@@ -34,7 +41,10 @@ export function decide(msg, { config, commands }) {
     });
     if (!t.triggered) return { action: 'ignore', reason: t.reason };
     text = t.text;
+    // "@Pocket" as a reply to someone's message = answer that message
+    if (!text && msg.quoted) return { action: 'ai', text: quoteBlock(msg.quoted.text, ''), isOwner };
     if (!text) return { action: 'command', name: 'help', args: [], argText: '', isOwner };
+    if (msg.quoted && !parseCommand(text)) return { action: 'ai', text: quoteBlock(msg.quoted.text, text), isOwner };
   } else {
     if (!isAllowedDm(msg.sender.number)) return { action: 'ignore', reason: 'dm-not-allowed' };
     // "/ai question" also works in DMs

@@ -154,8 +154,9 @@ export function createWhatsAppGateway({ config, onMessage }) {
     if (isJidStatusBroadcast(chatId) || isJidBroadcast(chatId) || isJidNewsletter(chatId)) return skip('broadcast');
 
     // Backlog guard: after a reconnect WhatsApp delivers queued messages; ignore stale ones.
+    // Stale ones are still returned (flagged) so they end up in the group context, but get no reply.
     const timestamp = Number(raw.messageTimestamp || 0);
-    if (timestamp && Date.now() / 1000 - timestamp > config.maxMessageAgeS) return skip('too old');
+    const stale = !!timestamp && Date.now() / 1000 - timestamp > config.maxMessageAgeS;
 
     const content = normalizeMessageContent(raw.message);
     if (!content) return skip(`no content (stub=${raw.messageStubType ?? '-'} ${raw.messageStubParameters?.[0] ?? ''})`);
@@ -173,6 +174,9 @@ export function createWhatsAppGateway({ config, onMessage }) {
     let mentionsBot = false;
     for (const j of mentioned) if (await isSelfAsync(current, j)) { mentionsBot = true; break; }
     const repliesToBot = await isSelfAsync(current, contextInfo?.participant);
+    const q = contextInfo?.quotedMessage ? normalizeMessageContent(contextInfo.quotedMessage) : null;
+    const quotedText = (q?.conversation || q?.extendedTextMessage?.text || q?.imageMessage?.caption || '').trim();
+    const quoted = quotedText && !repliesToBot ? { text: quotedText, id: contextInfo.stanzaId ?? null } : null;
     if (mentioned.length) log.debug(`mentions: ${mentioned.map((j) => j.split('@')[1]).join(', ')} -> bot=${mentionsBot}`);
 
     // remove "@<bot>" tokens from the text
@@ -195,6 +199,8 @@ export function createWhatsAppGateway({ config, onMessage }) {
       sender: { jid, number, name: raw.pushName || number || 'Someone' },
       mentionsBot,
       repliesToBot,
+      quoted, // { text, id } when this message replies to someone else's message
+      stale,
       raw,
     };
   }

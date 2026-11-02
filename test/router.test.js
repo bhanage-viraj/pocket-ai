@@ -109,3 +109,23 @@ test('group chatter the bot ignored is passed as context on the next mention', a
   assert.match(h.contexts[0], /\[Rahul\]: anyone up for chai\?/);
   assert.doesNotMatch(h.contexts[0], /what do you think/);
 });
+
+test('reply + @mention answers the quoted message; stale messages are context only', () => {
+  const quoted = { text: 'kal ka match kaun jeetega?', id: 'q1' };
+  const bare = d(group('', { mentionsBot: true, quoted }));
+  assert.equal(bare.action, 'ai');
+  assert.match(bare.text, /Reply to this message: "kal ka match kaun jeetega\?"/);
+  const withText = d(group('in short', { mentionsBot: true, quoted }));
+  assert.match(withText.text, /replying to: "kal ka match.*"\)\nin short/);
+  assert.equal(d(group('/stats', { mentionsBot: true, quoted })).name, 'stats');
+  assert.equal(d(group('', { mentionsBot: true })).name, 'help');
+  assert.deepEqual(d(group('hello', { mentionsBot: true, stale: true })), { action: 'ignore', reason: 'stale' });
+});
+
+test('a stale group message still lands in the context', async () => {
+  const h = harness();
+  await h.router.handle(group('missed while offline', { id: 'old', stale: true }));
+  assert.equal(h.replies.length, 0);
+  await h.router.handle(group('what did I miss?', { id: 'new', mentionsBot: true }));
+  assert.match(h.contexts[0], /missed while offline/);
+});
