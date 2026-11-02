@@ -8,6 +8,7 @@ import { loadCommands } from './commands/index.js';
 import { createIntentDetector } from './intent/detect.js';
 import { createChat } from './core/chat.js';
 import { createMemory } from './core/memory.js';
+import { createContext } from './core/context.js';
 import { createQueue } from './core/queue.js';
 import { createRateLimiter } from './core/ratelimit.js';
 import { createMetrics } from './core/metrics.js';
@@ -32,12 +33,13 @@ async function main() {
   const onGeneration = (kind, result) => metrics.record(kind, modelName, result);
 
   const memory = createMemory(db, { turns: config.historyTurns });
+  const context = createContext(db, { groupLines: config.groupContextLines });
   const detector = createIntentDetector({ llm, tasks, prefilter: config.intentPrefilter, onGeneration });
   const chat = createChat({ llm, memory, config, onGeneration });
 
   const gateway = createWhatsAppGateway({ config, onMessage: (msg) => router.handle(msg) });
   const router = createRouter({
-    config, db, llm, tasks, commands, detector, chat, memory, metrics,
+    config, db, llm, tasks, commands, detector, chat, memory, context, metrics,
     queue: createQueue({ max: config.queueMax }),
     limiter: createRateLimiter({ perMinute: config.rateLimitPerMin }),
     io: gateway.io,

@@ -4,6 +4,7 @@ export function createMemory(db, { turns = 6 } = {}) {
   const insert = db.prepare('INSERT INTO messages (chat_id, role, sender, content, ts) VALUES (?,?,?,?,?)');
   const recent = db.prepare('SELECT role, content FROM messages WHERE chat_id = ? ORDER BY id DESC LIMIT ?');
   const clear = db.prepare('DELETE FROM messages WHERE chat_id = ?');
+  const lastReply = db.prepare("SELECT MAX(ts) AS ts FROM messages WHERE chat_id = ? AND role = 'assistant'");
   const prune = db.prepare(
     'DELETE FROM messages WHERE chat_id = ? AND id NOT IN (SELECT id FROM messages WHERE chat_id = ? ORDER BY id DESC LIMIT ?)',
   );
@@ -21,6 +22,10 @@ export function createMemory(db, { turns = 6 } = {}) {
       insert.run(chatId, 'user', sender ?? null, userText, ts);
       insert.run(chatId, 'assistant', null, assistantText, ts);
       prune.run(chatId, chatId, Math.max(turns * 2, 20)); // keep a little extra on disk
+    },
+    /** Time of the bot's last reply in this chat (0 if none). */
+    lastReplyTs(chatId) {
+      return lastReply.get(chatId)?.ts ?? 0;
     },
     clear(chatId) {
       clear.run(chatId);

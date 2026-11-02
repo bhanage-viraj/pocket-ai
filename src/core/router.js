@@ -53,10 +53,15 @@ export function decide(msg, { config, commands }) {
 }
 
 export function createRouter(deps) {
-  const { config, commands, tasks, detector, chat, memory, queue, limiter, metrics, io, db, llm } = deps;
+  const { config, commands, tasks, detector, chat, memory, context, queue, limiter, metrics, io, db, llm } = deps;
   const taskByName = new Map(tasks.map((t) => [t.name, t]));
 
   async function handle(msg) {
+    try {
+      context?.observe(msg); // every message, also ignored ones: group context + who's who
+    } catch (err) {
+      log.warn('context observe failed:', err.message);
+    }
     const d = decide(msg, { config, commands });
     if (d.action === 'ignore') {
       const n = msg.sender.number;
@@ -108,7 +113,10 @@ export function createRouter(deps) {
             memory.addExchange(chatId, sender.number, userContent, answer);
             return answer;
           }
-          const answer = (await chat.reply({ chatId, isGroup, userContent })) || '🤔';
+          const extra = context?.build({
+            chatId, isGroup, sender, msgId: ctx.msg.id, since: memory.lastReplyTs(chatId),
+          }) ?? '';
+          const answer = (await chat.reply({ chatId, isGroup, userContent, context: extra })) || '🤔';
           memory.addExchange(chatId, sender.number, userContent, answer);
           return answer;
         } finally {

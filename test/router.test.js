@@ -6,6 +6,7 @@ import { createRouter, decide } from '../src/core/router.js';
 import { createQueue } from '../src/core/queue.js';
 import { createRateLimiter } from '../src/core/ratelimit.js';
 import { createMemory } from '../src/core/memory.js';
+import { createContext } from '../src/core/context.js';
 import { createMetrics } from '../src/core/metrics.js';
 import { openDb } from '../src/db/index.js';
 import { loadTasks } from '../src/tasks/index.js';
@@ -58,18 +59,19 @@ function harness({ intent = { intent: 'chat', fields: {} }, perMinute = 6 } = {}
   for (const t of tasks) t.migrate?.(db);
   const replies = [];
   const typing = [];
+  const contexts = [];
   const memory = createMemory(db, { turns: 3 });
   const router = createRouter({
-    config, db, tasks, commands, memory,
+    config, db, tasks, commands, memory, context: createContext(db),
     llm: { health: async () => true, model: async () => 'fake' },
     detector: { detect: async () => ({ via: 'model', ms: 1, ...intent }) },
-    chat: { reply: async ({ userContent }) => `echo: ${userContent}` },
+    chat: { reply: async ({ userContent, context }) => (contexts.push(context), `echo: ${userContent}`) },
     queue: createQueue({ max: 5 }),
     limiter: createRateLimiter({ perMinute }),
     metrics: createMetrics(db),
     io: { reply: async (_m, t) => replies.push(t), setTyping: async (c, on) => typing.push(on) },
   });
-  return { router, replies, typing, db, memory };
+  return { router, replies, typing, db, memory, contexts };
 }
 
 test('chat path: reply, typing on/off, history with group names', async () => {
@@ -97,4 +99,13 @@ test('rate limit applies to non-owners only', async () => {
   await h.router.handle(msg());
   await h.router.handle(msg());
   assert.equal(h.replies.filter((r) => /Too many/.test(r)).length, 1);
+});
+
+test('group chatter the bot ignored is passed as context on the next mention', async () => {
+  const h = harness();
+  await h.router.handle(group('anyone up for chai?', { id: 'a' }));
+  assert.equal(h.replies.length, 0);
+  await h.router.handle(group('what do you think?', { id: 'b', mentionsBot: true }));
+  assert.match(h.contexts[0], /\[Rahul\]: anyone up for chai\?/);
+  assert.doesNotMatch(h.contexts[0], /what do you think/);
 });

@@ -126,7 +126,10 @@ npm test                    # 25 unit tests, no model needed
 | `/notes [text]` | List or search notes |
 | `/stats` | tok/s, latency, cache hit, RAM, battery temp, uptime |
 | `/ping` | Health check |
-| `/reset` | Forget this chat's history |
+| `/me` | What it knows about you |
+| `/reset` | Forget this chat's history and group context |
+
+**Memory and context.** Each chat keeps its last `HISTORY_TURNS` exchanges. In groups the bot also reads along: when someone addresses it, it sees the group messages since its last reply (`GROUP_CONTEXT_LINES`, default 12), so "@Pocket what do you think?" works. It knows who is talking, and what each person asked it to remember (`remember that …`). Those facts follow you across chats, with one rule: in a DM it sees everything you saved, while in a group it only sees what was saved in that group. All of this stays in SQLite on the phone.
 
 ## Adding a task
 
@@ -150,7 +153,7 @@ export default {
 
 ## Configuration
 
-Everything lives in `.env` (see [`.env.example`](.env.example)). The main settings are `BOT_NUMBER`, `OWNER_NUMBERS`, `BOT_NAME`, `MODEL_PATH` (swap models here), `LLM_THREADS`, `LLM_CTX`, `DM_POLICY`, `HISTORY_TURNS`, `RATE_LIMIT_PER_MIN` and `INTENT_PREFILTER`.
+Everything lives in `.env` (see [`.env.example`](.env.example)). The main settings are `BOT_NUMBER`, `OWNER_NUMBERS`, `BOT_NAME`, `MODEL_PATH` (swap models here), `LLM_THREADS`, `LLM_CTX`, `DM_POLICY`, `HISTORY_TURNS`, `GROUP_CONTEXT_LINES`, `RATE_LIMIT_PER_MIN` and `INTENT_PREFILTER`.
 
 ## Roadmap
 

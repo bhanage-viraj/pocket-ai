@@ -17,6 +17,7 @@ const { loadCommands } = await import('../commands/index.js');
 const { createIntentDetector } = await import('../intent/detect.js');
 const { createChat } = await import('../core/chat.js');
 const { createMemory } = await import('../core/memory.js');
+const { createContext } = await import('../core/context.js');
 const { createQueue } = await import('../core/queue.js');
 const { createRateLimiter } = await import('../core/ratelimit.js');
 const { createMetrics } = await import('../core/metrics.js');
@@ -46,6 +47,7 @@ const memory = createMemory(db, { turns: config.historyTurns });
 
 const router = createRouter({
   config, db, llm, tasks, commands, metrics, memory,
+  context: createContext(db, { groupLines: config.groupContextLines }),
   detector: createIntentDetector({ llm, tasks, prefilter: config.intentPrefilter, onGeneration }),
   chat: createChat({ llm, memory, config, onGeneration }),
   queue: createQueue({ max: config.queueMax }),
