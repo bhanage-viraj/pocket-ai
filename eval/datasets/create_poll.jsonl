@@ -1,0 +1,10 @@
+{"text": "make a poll: where should we go for dinner, mainland china or barbeque nation", "intent": "create_poll", "fields": {"question": {"contains": ["dinner"]}}, "tags": ["en"]}
+{"text": "create a poll for the team outing date: 12th, 13th or 19th", "intent": "create_poll", "fields": {"question": {"contains": ["date", "outing"]}}, "tags": ["en"]}
+{"text": "let's vote on the movie for tonight", "intent": "create_poll", "fields": {"question": {"contains": ["movie"]}}, "tags": ["en"]}
+{"text": "can you start a poll on which laptop to buy macbook air or thinkpad", "intent": "create_poll", "fields": {"question": {"contains": ["laptop"]}}, "tags": ["en"]}
+{"text": "poll bana do goa ya manali", "intent": "create_poll", "tags": ["hinglish"]}
+{"text": "ek poll daal do kal ki class bunk karni hai ya nahi", "intent": "create_poll", "fields": {"question": {"contains": ["class", "bunk"]}}, "tags": ["hinglish"]}
+{"text": "voting karwa do pizza vs biryani", "intent": "create_poll", "tags": ["hinglish"]}
+{"text": "who is winning the bihar election polls?", "intent": "chat", "tags": ["en", "negative"]}
+{"text": "what is a poll in javascript event loop", "intent": "chat", "tags": ["en", "negative"]}
+{"text": "kal voting hai kya?", "intent": "chat", "tags": ["hinglish", "negative"]}

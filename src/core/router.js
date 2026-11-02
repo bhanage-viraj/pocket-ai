@@ -223,8 +223,9 @@ export function createRouter(deps) {
 
           if (task?.handle && (task.permission !== 'owner' || sender.isOwner)) {
             const answer = await task.handle({ ...ctx, text }, intent.fields);
-            memory.addExchange(chatId, sender.number, userContent, answer);
-            return heard + answer;
+            // a task may answer with its own message (e.g. a poll) and return null: nothing more to say
+            memory.addExchange(chatId, sender.number, userContent, answer ?? `[did ${task.name}]`);
+            return answer == null ? (heard || null) : heard + answer;
           }
           const extra = context?.build({
             chatId, isGroup, sender, msgId: ctx.msg.id, since: memory.lastReplyTs(chatId),
@@ -246,7 +247,8 @@ export function createRouter(deps) {
     if (job.position > 0) await reply(`⏳ In queue (#${job.position})…`);
 
     try {
-      await reply(await job.done);
+      const answer = await job.done;
+      if (answer) await reply(answer);
     } catch (err) {
       log.error('generation failed:', err.message);
       if (err instanceof MediaUnavailableError) {

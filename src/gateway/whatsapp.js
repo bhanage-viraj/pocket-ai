@@ -271,6 +271,10 @@ export function createWhatsAppGateway({ config, onMessage }) {
     async sendText(chatId, text, { mentions } = {}) {
       return sock.sendMessage(chatId, { text, ...(mentions && { mentions }) });
     },
+    /** poll = { name, values: string[], selectableCount } */
+    async sendPoll(chatId, poll) {
+      return sock.sendMessage(chatId, { poll });
+    },
     async sendSticker(msg, webp) {
       return sock.sendMessage(msg.chatId, { sticker: webp }, { quoted: msg.raw });
     },

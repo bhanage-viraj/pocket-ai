@@ -130,6 +130,7 @@ npm test                    # 25 unit tests, no model needed
 | `/reminders` | Upcoming reminders in this chat (`/reminders cancel <id>`) |
 | `/summary` | Group TL;DR of what you missed (or `@Pocket tldr`) |
 | `/sticker` | How to make stickers |
+| `/poll Q? \| A \| B` | Real WhatsApp poll (`/poll multi …` for multiple answers). Or say it: `@Pocket make a poll: goa or manali` |
 | `/claude <question>` | Ask Claude via the Mac bridge (works in groups without tagging) |
 | `/code [project:] <task>` | 🔒 Claude Code works on a new branch on the Mac and reports back |
 | `/reset` | Forget this chat's history and group context |
