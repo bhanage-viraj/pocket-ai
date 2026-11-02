@@ -110,7 +110,7 @@ Reboot the phone. Don't open anything. After about a minute, message the bot. It
 | See logs live | `tmux attach -t pocket` (Ctrl+b n to switch, Ctrl+b d to leave) |
 | Stop | `./scripts/stop.sh` |
 | Start | `./scripts/start.sh` |
-| Update code | `git pull && npm install && ./scripts/stop.sh && ./scripts/start.sh` |
+| Update code | Automatic: push from the Mac and the phone pulls it within ~5 min (`UPDATE_INTERVAL_S`). See it in the `update` tmux window. Manual: `git pull && ./scripts/stop.sh && ./scripts/start.sh` |
 | Run evals on the phone | `npm run eval -- --label phone-1b-t2` |
 | Try another model | `./scripts/download-model.sh 4b`, set `MODEL_PATH` in `.env`, restart |
 
