@@ -36,6 +36,8 @@ export function createIntentDetector({ llm, tasks, prefilter = true, onGeneratio
     const { intent, ...raw } = parsed;
     const task = taskByName.get(intent);
     if (!task) return { intent: 'chat', fields: {}, via: 'fallback', ms: performance.now() - t0 };
+    // a task can refuse messages it can't act on (e.g. "save" with no link in it) -> plain chat
+    if (task.accepts && !task.accepts(text)) return { intent: 'chat', fields: {}, via: 'rejected', ms: performance.now() - t0, rejected: intent };
     for (const [k, v] of Object.entries(raw)) {
       if (typeof v === 'string') raw[k] = v.trim() || null;
     }

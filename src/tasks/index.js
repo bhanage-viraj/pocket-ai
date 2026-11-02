@@ -7,6 +7,10 @@
 //   examples     few-shot examples: [{ text, fields }]   (English + Hinglish)
 //   prefilter    optional (text) => boolean; cheap check, false = "definitely not this task"
 //   postprocess  optional (fields, text) => fields; plain-code cleanup/fallbacks after grounding
+//   accepts      optional (text) => boolean; false = the model's pick is overruled -> chat
+//   followUp     optional async (ctx, text) => reply|undefined; runs before intent detection,
+//                answers a question the task asked earlier ("which area?"). undefined = not ours
+//   onLocation   optional async (ctx, {lat, lon}) => reply; a shared 📍 location
 //   permission   'anyone' (default) | 'owner'
 //   migrate      optional (db) => void; create the task's tables
 //   handle       async (ctx, fields) => reply text

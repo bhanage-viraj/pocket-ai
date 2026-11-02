@@ -216,7 +216,11 @@ export function createWhatsAppGateway({ config, onMessage }) {
       content.documentMessage?.caption ||
       '';
     const media = mediaOf(current, raw, content);
-    if (!text.trim() && !media) return skip(`no text (${Object.keys(content).join(',')})`);
+    const loc = content.locationMessage || content.liveLocationMessage;
+    const location = loc && Number.isFinite(loc.degreesLatitude) && Number.isFinite(loc.degreesLongitude)
+      ? { lat: loc.degreesLatitude, lon: loc.degreesLongitude }
+      : null;
+    if (!text.trim() && !media && !location) return skip(`no text (${Object.keys(content).join(',')})`);
 
     const contextInfo = Object.values(content).find((v) => v && typeof v === 'object' && v.contextInfo)?.contextInfo;
     const mentioned = contextInfo?.mentionedJid || [];
@@ -259,6 +263,7 @@ export function createWhatsAppGateway({ config, onMessage }) {
       repliesToBot,
       quoted, // { text, id } when this message replies to someone else's message
       media, // voice note / GIF / sticker / photo; downloaded only if the router decides to answer
+      location, // { lat, lon } for a shared 📍 location
       stale,
       raw,
     };
@@ -266,7 +271,9 @@ export function createWhatsAppGateway({ config, onMessage }) {
 
   const io = {
     async reply(msg, text) {
-      return sock.sendMessage(msg.chatId, { text }, { quoted: msg.raw });
+      // quote the question in groups (who is this for?) and for late replies; a DM is 1:1, quoting is noise
+      const quote = msg.isGroup || msg.stale;
+      return sock.sendMessage(msg.chatId, { text }, quote ? { quoted: msg.raw } : {});
     },
     async sendText(chatId, text, { mentions } = {}) {
       return sock.sendMessage(chatId, { text, ...(mentions && { mentions }) });

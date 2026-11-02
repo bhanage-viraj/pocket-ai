@@ -42,6 +42,8 @@ export default {
   ],
 
   prefilter: (text) => extractUrls(text).length > 0 || KEYWORDS.test(text),
+  // nothing to save without a link ("map links", "save this" with no URL) -> let chat answer
+  accepts: (text) => extractUrls(text).length > 0,
 
   migrate(db) {
     db.exec(`CREATE TABLE IF NOT EXISTS resources (

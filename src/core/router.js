@@ -141,6 +141,7 @@ export function createRouter(deps) {
     if (dl && isAllowedDm(msg.sender.number) && !msg.stale) return handleDeadlines(msg, dl);
     const st = stickers && stickerRequest(msg);
     if (st && (msg.isGroup || isAllowedDm(msg.sender.number)) && !msg.stale) return handleSticker(msg, st);
+    if (msg.location) return handleLocation(msg);
     if (msg.media && !msg.text) return handleMedia(msg);
     const d = decide(msg, { config, commands });
     if (d.action === 'ignore') {
@@ -229,6 +230,24 @@ export function createRouter(deps) {
     return { action: 'sticker' };
   }
 
+  /** A shared 📍 location (DMs, or a group reply to the bot) -> tasks that use it (find_places). */
+  async function handleLocation(msg) {
+    const addressed = msg.isGroup ? msg.mentionsBot || msg.repliesToBot : isAllowedDm(msg.sender.number);
+    const task = tasks.find((t) => t.onLocation);
+    if (!addressed || !task || msg.stale) return { action: 'ignore', reason: 'location' };
+    metrics.countMessage();
+    const sender = { ...msg.sender, isOwner: isOwnerNumber(msg.sender.number) };
+    log.info(`→ ${msg.isGroup ? 'group' : 'dm'} ${sender.name} [location]`);
+    const ctx = { ...deps, msg, chatId: msg.chatId, isGroup: msg.isGroup, sender, reply: (t) => io.reply(msg, t) };
+    try {
+      const answer = await task.onLocation(ctx, msg.location);
+      if (answer) await ctx.reply(answer);
+    } catch (err) {
+      log.error('location handler failed:', err.message);
+    }
+    return { action: 'location' };
+  }
+
   /** Voice note / GIF / sticker / photo with no caption. Only processed when it's meant for the bot. */
   async function handleMedia(msg) {
     const addressed = msg.isGroup ? msg.mentionsBot || msg.repliesToBot : isAllowedDm(msg.sender.number);
@@ -274,6 +293,16 @@ export function createRouter(deps) {
             if (!r.text) return mediaIn.kind === 'voice' ? '🎤 Sorry, I couldn\'t make out that voice note.' : '🤔';
             text = r.text;
             heard = r.transcript ? `🎤 _"${r.transcript.length > 300 ? r.transcript.slice(0, 299) + '…' : r.transcript}"_\n\n` : '';
+          }
+          // a task waiting for an answer ("which area?") gets the next message first
+          for (const t of tasks) {
+            if (!t.followUp || mediaIn) continue;
+            const answer = await t.followUp({ ...ctx, text }, text);
+            if (answer != null) {
+              log.info(`  followUp ${t.name}`);
+              memory.addExchange(chatId, sender.number, isGroup ? `[${sender.name}]: ${text}` : text, answer);
+              return answer;
+            }
           }
           const intent = await detector.detect(text);
           log.info(`  intent=${intent.intent} via=${intent.via} ${Math.round(intent.ms)}ms`, JSON.stringify(intent.fields));
