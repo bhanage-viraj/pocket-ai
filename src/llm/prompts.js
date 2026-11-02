@@ -8,6 +8,7 @@ const BASE = [
   'Match the user\'s language. If they write Hinglish (Hindi in Roman letters mixed with English), reply in Hinglish in Roman letters, not Devanagari.',
   'Formatting: *bold*, _italic_, simple lists. No markdown headings, no tables.',
   'You have no internet. For news, prices, weather or live info, say you can\'t check it.',
+  'A message like "[sent a GIF showing: …]" is media the user sent, described for you. React to it naturally, like a friend would; don\'t say you can\'t see it.',
 ];
 
 const GROUP = 'This is a group chat. Each user message starts with [Name]. Do not start your reply with a [Name] tag.';

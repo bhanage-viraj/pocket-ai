@@ -10,6 +10,19 @@ if [ "$INTERVAL" = 0 ]; then echo "Auto-update is off (UPDATE_INTERVAL_S=0)."; e
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 echo "$(date '+%F %T') auto-update: checking origin/$BRANCH every ${INTERVAL}s"
 
+# Windows added after the session was started (e.g. "vision") are created here, so a plain
+# push is enough even for new parts. One-time setup scripts run once per version (stamp file).
+ensure() {
+  tmux list-windows -t pocket -F '#W' 2>/dev/null | grep -qx vision \
+    || tmux new-window -d -t pocket -n vision "bash scripts/run-vision.sh"
+  local stamp="data/.setup-media-$(git hash-object scripts/setup-media.sh 2>/dev/null)"
+  if [ -f scripts/setup-media.sh ] && [ ! -f "$stamp" ]; then
+    echo "$(date '+%F %T') running setup-media.sh (one time)"
+    if bash scripts/setup-media.sh; then mkdir -p data; touch "$stamp"; else echo "  setup-media failed; will retry next update"; fi
+  fi
+}
+ensure
+
 while true; do
   sleep "$INTERVAL"
   git fetch -q origin "$BRANCH" 2>/dev/null || continue          # offline: try again later
@@ -30,7 +43,11 @@ while true; do
   if grep -qE '^(src/|package|scripts/(run-bot|lib)\.sh)' <<<"$CHANGED"; then
     echo "  restarting bot"; tmux respawn-window -k -t pocket:bot "bash scripts/run-bot.sh"
   fi
+  if grep -qE '^scripts/run-vision\.sh$' <<<"$CHANGED"; then
+    echo "  restarting vision"; tmux respawn-window -k -t pocket:vision "bash scripts/run-vision.sh"
+  fi
   if grep -qE '^scripts/auto-update\.sh$' <<<"$CHANGED"; then
     echo "  reloading updater"; exec bash scripts/auto-update.sh
   fi
+  ensure
 done

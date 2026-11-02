@@ -43,6 +43,16 @@ export const config = Object.freeze({
   bridgeUrl: (env.MAC_BRIDGE_URL || '').replace(/\/$/, ''),
   bridgeToken: env.BRIDGE_TOKEN || '',
   claudePerHour: int(env.CLAUDE_PER_HOUR, 10),
+
+  // Voice notes (whisper.cpp) and GIFs/stickers/photos (vision model). MEDIA=off disables both.
+  media: bool(env.MEDIA, true),
+  ffmpegBin: env.FFMPEG_BIN || 'ffmpeg',
+  whisperBin: env.WHISPER_BIN || 'whisper-cli',
+  whisperModel: expandHome(env.WHISPER_MODEL || '~/models/ggml-base-q5_1.bin'),
+  whisperLang: env.WHISPER_LANG || 'auto',
+  voiceMaxS: int(env.VOICE_MAX_S, 120),
+  visionUrl: (env.VISION_URL || 'http://127.0.0.1:8081').replace(/\/$/, ''),
+  mediaThreads: int(env.MEDIA_THREADS, 2),
   rateLimitPerMin: int(env.RATE_LIMIT_PER_MIN, 6),
   queueMax: int(env.QUEUE_MAX, 5),
   maxMessageAgeS: int(env.MAX_MESSAGE_AGE_S, 60),

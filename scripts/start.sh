@@ -16,6 +16,7 @@ fi
 
 tmux new-session -d -s "$SESSION" -n llm "bash scripts/run-llm.sh"
 tmux new-window -t "$SESSION" -n bot "bash scripts/run-bot.sh"
+tmux new-window -t "$SESSION" -n vision "bash scripts/run-vision.sh"
 tmux new-window -t "$SESSION" -n update "bash scripts/auto-update.sh"
 echo "✅ Pocket AI started in tmux session '$SESSION'."
 echo "   Watch:  tmux attach -t $SESSION      Stop: ./scripts/stop.sh"

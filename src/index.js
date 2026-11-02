@@ -10,6 +10,7 @@ import { createChat } from './core/chat.js';
 import { createMemory } from './core/memory.js';
 import { createContext } from './core/context.js';
 import { createBridge } from './core/bridge.js';
+import { createMedia } from './media/index.js';
 import { createQueue } from './core/queue.js';
 import { createRateLimiter } from './core/ratelimit.js';
 import { createMetrics } from './core/metrics.js';
@@ -46,6 +47,7 @@ async function main() {
     limiter: createRateLimiter({ perMinute: config.rateLimitPerMin }),
     io: gateway.io,
     bridge,
+    media: config.media ? createMedia({ config }) : null,
   });
 
   if (await llm.health()) {

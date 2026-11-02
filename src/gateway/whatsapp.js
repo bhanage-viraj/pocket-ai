@@ -7,6 +7,7 @@ import makeWASocket, {
   Browsers,
   DisconnectReason,
   areJidsSameUser,
+  downloadMediaMessage,
   fetchLatestBaileysVersion,
   isJidBroadcast,
   isJidGroup,
@@ -30,6 +31,7 @@ import { log } from '../util/log.js';
  * @property {boolean} mentionsBot
  * @property {boolean} repliesToBot
  * @property {object} raw           original Baileys message (for quoting)
+ * @property {{kind: 'voice'|'gif'|'sticker'|'image', seconds: number, download: () => Promise<Buffer>}|null} media
  */
 
 const EXIT_LOGGED_OUT = 3;
@@ -159,6 +161,24 @@ export function createWhatsAppGateway({ config, onMessage }) {
     return null;
   }
 
+  /** Voice notes, GIFs, stickers and photos -> a lazy descriptor (nothing is downloaded yet). */
+  function mediaOf(current, raw, content) {
+    const kind = content.audioMessage ? 'voice'
+      : content.videoMessage?.gifPlayback ? 'gif'
+      : content.stickerMessage ? 'sticker'
+      : content.imageMessage ? 'image'
+      : null;
+    if (!kind) return null;
+    const m = content.audioMessage || content.videoMessage || content.stickerMessage || content.imageMessage;
+    return {
+      kind,
+      seconds: Number(m.seconds || 0),
+      mimetype: m.mimetype || '',
+      download: () =>
+        downloadMediaMessage(raw, 'buffer', {}, { logger: baileysLogger, reuploadRequest: current.updateMediaMessage }),
+    };
+  }
+
   /** Baileys message -> IncomingMessage (or null to skip). */
   async function normalize(current, raw) {
     const { key } = raw;
@@ -181,7 +201,8 @@ export function createWhatsAppGateway({ config, onMessage }) {
       content.videoMessage?.caption ||
       content.documentMessage?.caption ||
       '';
-    if (!text.trim()) return skip(`no text (${Object.keys(content).join(',')})`);
+    const media = mediaOf(current, raw, content);
+    if (!text.trim() && !media) return skip(`no text (${Object.keys(content).join(',')})`);
 
     const contextInfo = Object.values(content).find((v) => v && typeof v === 'object' && v.contextInfo)?.contextInfo;
     const mentioned = contextInfo?.mentionedJid || [];
@@ -214,6 +235,7 @@ export function createWhatsAppGateway({ config, onMessage }) {
       mentionsBot,
       repliesToBot,
       quoted, // { text, id } when this message replies to someone else's message
+      media, // voice note / GIF / sticker / photo; downloaded only if the router decides to answer
       stale,
       raw,
     };

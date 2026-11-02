@@ -133,6 +133,15 @@ npm test                    # 25 unit tests, no model needed
 
 **Memory and context.** Each chat keeps its last `HISTORY_TURNS` exchanges. In groups the bot also reads along: when someone addresses it, it sees the group messages since its last reply (`GROUP_CONTEXT_LINES`, default 12), so "@Pocket what do you think?" works. It knows who is talking, and what each person asked it to remember (`remember that …`). Those facts follow you across chats, with one rule: in a DM it sees everything you saved, while in a group it only sees what was saved in that group. All of this stays in SQLite on the phone.
 
+## Voice notes and GIFs
+
+Both are handled on the phone:
+
+- 🎤 **Voice notes:** `ffmpeg` converts the note to 16 kHz WAV, then whisper.cpp (`ggml-base-q5_1`, multilingual, so Hinglish works) transcribes it. The bot answers the transcript and shows what it heard: `🎤 "kal ka plan kya hai"`.
+- 🎞️ **GIFs, stickers and photos:** the bot takes one frame and sends it to a small vision model (SmolVLM-500M on a second `llama-server` on port 8081). That model writes a one-line description, and Gemma reacts to it.
+- In DMs it always responds. In groups it responds only when the media is a reply to the bot, so a group full of stickers doesn't keep the CPU busy.
+- Setup is `scripts/setup-media.sh`. Auto-update runs it once when it changes. Set `MEDIA=off` to turn media handling off.
+
 ## Claude on the Mac (`/claude`, `/code`)
 
 The phone forwards these prompts to a small service on the Mac (`bridge/server.js`). The service runs Claude Code (`claude -p`) and the bot posts the answer back into the chat. The phone only makes outgoing requests to the Mac's Tailscale address, so nothing on the phone has to accept connections.

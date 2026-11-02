@@ -54,7 +54,7 @@ test('commands: known, unknown, owner-only', () => {
   commands.delete('secret');
 });
 
-function harness({ intent = { intent: 'chat', fields: {} }, perMinute = 6 } = {}) {
+function harness({ intent = { intent: 'chat', fields: {} }, perMinute = 6, media = null } = {}) {
   const db = openDb(':memory:');
   for (const t of tasks) t.migrate?.(db);
   const replies = [];
@@ -62,7 +62,7 @@ function harness({ intent = { intent: 'chat', fields: {} }, perMinute = 6 } = {}
   const contexts = [];
   const memory = createMemory(db, { turns: 3 });
   const router = createRouter({
-    config, db, tasks, commands, memory, context: createContext(db),
+    config, db, tasks, commands, memory, context: createContext(db), media,
     llm: { health: async () => true, model: async () => 'fake' },
     detector: { detect: async () => ({ via: 'model', ms: 1, ...intent }) },
     chat: { reply: async ({ userContent, context }) => (contexts.push(context), `echo: ${userContent}`) },
@@ -151,4 +151,24 @@ test('/claude works in groups without tagging; /code is owner-only', () => {
   assert.equal(d(group('/code fix the bug')).action, 'deny');
   assert.equal(d(group('/code fix the bug', { sender: { jid: 'o', number: OWNER, name: 'Viraj' } })).name, 'code');
   assert.equal(d(group('/stats')).action, 'ignore', 'other commands still need a tag in groups');
+});
+
+const fakeMedia = { toText: async (m) => (m.kind === 'voice' ? { text: 'what is rag', transcript: 'what is rag' } : { text: '[sent a GIF showing: a dancing cat]' }) };
+const voice = { kind: 'voice', seconds: 4, download: async () => Buffer.from('') };
+const gif = { kind: 'gif', seconds: 2, download: async () => Buffer.from('') };
+
+test('voice note in a DM: transcribed, answered, transcript shown', async () => {
+  const h = harness({ media: fakeMedia });
+  await h.router.handle(msg({ text: '', media: voice }));
+  assert.equal(h.replies[0], '🎤 _"what is rag"_\n\necho: what is rag');
+});
+
+test('GIF: answered in DMs and when replying to the bot; ignored in group chatter', async () => {
+  const h = harness({ media: fakeMedia });
+  await h.router.handle(group('', { media: gif }));
+  assert.equal(h.replies.length, 0);
+  await h.router.handle(group('', { media: gif, repliesToBot: true }));
+  assert.equal(h.replies[0], 'echo: [Rahul]: [sent a GIF showing: a dancing cat]');
+  await h.router.handle(msg({ text: '', media: gif, sender: { jid: 's', number: '919833333333', name: 'S' } }));
+  assert.equal(h.replies.length, 1, 'strangers still ignored in DMs');
 });

@@ -81,7 +81,7 @@ function decideNow(msg, { config, commands }) {
 }
 
 export function createRouter(deps) {
-  const { config, commands, tasks, detector, chat, memory, context, queue, limiter, metrics, io, db, llm } = deps;
+  const { config, commands, tasks, detector, chat, memory, context, media, queue, limiter, metrics, io, db, llm } = deps;
   const taskByName = new Map(tasks.map((t) => [t.name, t]));
 
   async function handle(msg) {
@@ -90,6 +90,7 @@ export function createRouter(deps) {
     } catch (err) {
       log.warn('context observe failed:', err.message);
     }
+    if (msg.media && !msg.text) return handleMedia(msg);
     const d = decide(msg, { config, commands });
     if (d.action === 'ignore') {
       const n = msg.sender.number;
@@ -119,7 +120,32 @@ export function createRouter(deps) {
     return d;
   }
 
-  async function handleAi(ctx, text, late = false) {
+  /** Voice note / GIF / sticker / photo with no caption. Only processed when it's meant for the bot. */
+  async function handleMedia(msg) {
+    const addressed = msg.isGroup ? msg.mentionsBot || msg.repliesToBot : isAllowedDm(msg.sender.number);
+    const age = Date.now() / 1000 - (msg.timestamp || 0);
+    if (!addressed || !media || (msg.stale && age > config.lateReplyMaxS)) {
+      log.debug(`ignored ${msg.media.kind} (${!media ? 'media off' : !addressed ? 'not addressed' : 'too old'})`);
+      return { action: 'ignore', reason: 'media' };
+    }
+    if (msg.media.kind === 'voice' && msg.media.seconds > config.voiceMaxS * 2) {
+      await io.reply(msg, `🎤 That voice note is too long for me (max ~${config.voiceMaxS}s).`);
+      return { action: 'ignore', reason: 'too-long' };
+    }
+    metrics.countMessage();
+    const sender = { ...msg.sender, isOwner: isOwnerNumber(msg.sender.number) };
+    const ctx = { ...deps, msg, chatId: msg.chatId, isGroup: msg.isGroup, sender, reply: (t) => io.reply(msg, t) };
+    log.info(`→ ${msg.isGroup ? 'group' : 'dm'} ${sender.name} [${msg.media.kind}${msg.media.seconds ? ' ' + msg.media.seconds + 's' : ''}]`);
+    try {
+      await handleAi(ctx, '', !!msg.stale, msg.media);
+    } catch (err) {
+      log.error('media handler failed:', err.stack || err.message);
+      await ctx.reply('⚠️ Something went wrong on my side. Try again?').catch(() => {});
+    }
+    return { action: 'ai', media: msg.media.kind };
+  }
+
+  async function handleAi(ctx, text, late = false, mediaIn = null) {
     const { sender, chatId, isGroup, reply } = ctx;
     if (!sender.isOwner && !limiter.take(sender.jid)) {
       if (!isGroup) await reply('⏳ Too many messages — give me a minute.');
@@ -131,6 +157,15 @@ export function createRouter(deps) {
       job = queue.push(async () => {
         await io.setTyping(chatId, true);
         try {
+          let heard = '';
+          if (mediaIn) {
+            const t0 = performance.now();
+            const r = await media.toText(mediaIn);
+            log.info(`  ${mediaIn.kind} -> "${r.text.slice(0, 80)}" ${Math.round(performance.now() - t0)}ms`);
+            if (!r.text) return mediaIn.kind === 'voice' ? '🎤 Sorry, I couldn\'t make out that voice note.' : '🤔';
+            text = r.text;
+            heard = r.transcript ? `🎤 _"${r.transcript.length > 300 ? r.transcript.slice(0, 299) + '…' : r.transcript}"_\n\n` : '';
+          }
           const intent = await detector.detect(text);
           log.info(`  intent=${intent.intent} via=${intent.via} ${Math.round(intent.ms)}ms`, JSON.stringify(intent.fields));
           const task = taskByName.get(intent.intent);
@@ -139,14 +174,14 @@ export function createRouter(deps) {
           if (task?.handle && (task.permission !== 'owner' || sender.isOwner)) {
             const answer = await task.handle({ ...ctx, text }, intent.fields);
             memory.addExchange(chatId, sender.number, userContent, answer);
-            return answer;
+            return heard + answer;
           }
           const extra = context?.build({
             chatId, isGroup, sender, msgId: ctx.msg.id, since: memory.lastReplyTs(chatId),
           }) ?? '';
           const answer = (await chat.reply({ chatId, isGroup, userContent, context: extra })) || '🤔';
           memory.addExchange(chatId, sender.number, userContent, answer);
-          return late ? `_(sorry for the late reply, I was offline)_\n${answer}` : answer;
+          return (late ? '_(sorry for the late reply, I was offline)_\n' : '') + heard + answer;
         } finally {
           await io.setTyping(chatId, false);
         }
