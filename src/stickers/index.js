@@ -62,11 +62,13 @@ function exec(bin, args, timeoutMs) {
 
 /** ffmpeg filter graph for a spec. Exported for tests. */
 export function buildFilter(spec, { animated, fontFile, textFile }) {
+  // square: fit the whole picture (transparent bars); circle/rounded: fill the square (centre crop)
+  const fill = spec.shape === 'circle' || spec.shape === 'rounded';
   const f = [
     ...(animated ? ['fps=12'] : []),
-    'scale=512:512:force_original_aspect_ratio=decrease',
-    'format=rgba',
-    'pad=512:512:(ow-iw)/2:(oh-ih)/2:color=0x00000000',
+    ...(fill
+      ? ['scale=512:512:force_original_aspect_ratio=increase', 'crop=512:512', 'format=rgba']
+      : ['scale=512:512:force_original_aspect_ratio=decrease', 'format=rgba', 'pad=512:512:(ow-iw)/2:(oh-ih)/2:color=0x00000000']),
   ];
   if (spec.shape === 'circle') {
     f.push("geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':a='if(lte(hypot(X-256,Y-256),254),alpha(X,Y),0)'");
@@ -75,7 +77,8 @@ export function buildFilter(spec, { animated, fontFile, textFile }) {
     f.push("geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':a='if(gt(abs(X-256),196)*gt(abs(Y-256),196)*gt(hypot(abs(X-256)-196,abs(Y-256)-196),60),0,alpha(X,Y))'");
   }
   if (spec.text && textFile) {
-    const y = spec.position === 'top' ? '24' : spec.position === 'center' ? '(h-text_h)/2' : 'h-text_h-28';
+    const edge = fill ? 44 : 24; // keep text inside the circle's curve
+    const y = spec.position === 'top' ? String(edge) : spec.position === 'center' ? '(h-text_h)/2' : `h-text_h-${edge + 4}`;
     const size = spec.text.length > 22 ? 40 : spec.text.length > 12 ? 52 : 64;
     f.push(
       `drawtext=fontfile=${fontFile}:textfile=${textFile}:fontsize=${size}:fontcolor=${spec.color}` +
