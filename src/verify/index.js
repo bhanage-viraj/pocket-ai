@@ -42,7 +42,9 @@ export function parseNewsRss(xml, max = 5) {
     let title = get('title');
     if (source && title.endsWith(` - ${source}`)) title = title.slice(0, -(source.length + 3));
     const date = get('pubDate') ? new Date(get('pubDate')).toISOString().slice(0, 10) : '';
-    items.push({ kind: 'news', title, url: get('link'), source, date });
+    // Google News article links are ~600 encoded chars: link a search for the exact headline instead
+    const url = `https://www.google.com/search?q=${encodeURIComponent(`"${title}"`)}`;
+    items.push({ kind: 'news', title, url, source, date });
     if (items.length >= max) break;
   }
   return items;

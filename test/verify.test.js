@@ -34,7 +34,7 @@ const RSS = `<rss><channel><item><title>RBI withdraws Rs 2000 notes from circula
 <source url="https://www.thehindu.com">The Hindu</source></item></channel></rss>`;
 
 test('Google News RSS parsing', () => {
-  assert.deepEqual(parseNewsRss(RSS), [{ kind: 'news', title: 'RBI withdraws Rs 2000 notes from circulation', url: 'https://news.google.com/rss/articles/abc', source: 'The Hindu', date: '2023-05-19' }]);
+  assert.deepEqual(parseNewsRss(RSS), [{ kind: 'news', title: 'RBI withdraws Rs 2000 notes from circulation', url: 'https://www.google.com/search?q=%22RBI%20withdraws%20Rs%202000%20notes%20from%20circulation%22', source: 'The Hindu', date: '2023-05-19' }]);
 });
 
 function fakeFetch({ wiki = true, news = true } = {}) {
