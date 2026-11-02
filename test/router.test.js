@@ -144,3 +144,11 @@ test('a stale group message still lands in the context', async () => {
   await h.router.handle(group('what did I miss?', { id: 'new', mentionsBot: true }));
   assert.match(h.contexts[0], /missed while offline/);
 });
+
+test('/claude works in groups without tagging; /code is owner-only', () => {
+  assert.equal(d(group('/claude what is rag')).name, 'claude');
+  assert.equal(d(group('/claude what is rag')).argText, 'what is rag');
+  assert.equal(d(group('/code fix the bug')).action, 'deny');
+  assert.equal(d(group('/code fix the bug', { sender: { jid: 'o', number: OWNER, name: 'Viraj' } })).name, 'code');
+  assert.equal(d(group('/stats')).action, 'ignore', 'other commands still need a tag in groups');
+});

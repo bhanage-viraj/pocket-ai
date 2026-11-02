@@ -11,7 +11,8 @@
     "test": "node --disable-warning=ExperimentalWarning --test 'test/*.test.js'",
     "eval": "node --disable-warning=ExperimentalWarning eval/run.js",
     "eval:report": "node eval/report.js",
-    "bench": "bash bench/llama-bench.sh"
+    "bench": "bash bench/llama-bench.sh",
+    "bridge": "node bridge/server.js"
   },
   "engines": {
     "node": ">=22.13"

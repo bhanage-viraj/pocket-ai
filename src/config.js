@@ -38,6 +38,11 @@ export const config = Object.freeze({
 
   historyTurns: int(env.HISTORY_TURNS, 6),
   groupContextLines: int(env.GROUP_CONTEXT_LINES, 12),
+
+  // Mac bridge (Claude Code). Empty URL = /claude and /code are off.
+  bridgeUrl: (env.MAC_BRIDGE_URL || '').replace(/\/$/, ''),
+  bridgeToken: env.BRIDGE_TOKEN || '',
+  claudePerHour: int(env.CLAUDE_PER_HOUR, 10),
   rateLimitPerMin: int(env.RATE_LIMIT_PER_MIN, 6),
   queueMax: int(env.QUEUE_MAX, 5),
   maxMessageAgeS: int(env.MAX_MESSAGE_AGE_S, 60),

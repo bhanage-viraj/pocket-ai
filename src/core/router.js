@@ -44,6 +44,13 @@ function decideNow(msg, { config, commands }) {
   if (!text && !(msg.isGroup && msg.mentionsBot)) return { action: 'ignore', reason: 'empty' };
 
   if (msg.isGroup) {
+    // a few commands (/claude, /code) work in groups without tagging the bot
+    const direct = parseCommand(text);
+    if (direct && commands.get(direct.name)?.groupDirect) {
+      const command = commands.get(direct.name);
+      if (command.ownerOnly && !isOwner) return { action: 'deny', name: direct.name, isOwner };
+      return { action: 'command', ...direct, isOwner };
+    }
     const t = checkGroupTrigger({
       text,
       mentionsBot: msg.mentionsBot,

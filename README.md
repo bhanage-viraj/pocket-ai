@@ -127,9 +127,21 @@ npm test                    # 25 unit tests, no model needed
 | `/stats` | tok/s, latency, cache hit, RAM, battery temp, uptime |
 | `/ping` | Health check |
 | `/me` | What it knows about you |
+| `/claude <question>` | Ask Claude via the Mac bridge (works in groups without tagging) |
+| `/code [project:] <task>` | 🔒 Claude Code works on a new branch on the Mac and reports back |
 | `/reset` | Forget this chat's history and group context |
 
 **Memory and context.** Each chat keeps its last `HISTORY_TURNS` exchanges. In groups the bot also reads along: when someone addresses it, it sees the group messages since its last reply (`GROUP_CONTEXT_LINES`, default 12), so "@Pocket what do you think?" works. It knows who is talking, and what each person asked it to remember (`remember that …`). Those facts follow you across chats, with one rule: in a DM it sees everything you saved, while in a group it only sees what was saved in that group. All of this stays in SQLite on the phone.
+
+## Claude on the Mac (`/claude`, `/code`)
+
+The phone forwards these prompts to a small service on the Mac (`bridge/server.js`). The service runs Claude Code (`claude -p`) and the bot posts the answer back into the chat. The phone only makes outgoing requests to the Mac's Tailscale address, so nothing on the phone has to accept connections.
+
+- `/claude …` runs Claude with **no tools**, in an empty folder, so it can't read or change anything on the Mac. Owners can use it anywhere, and anyone can use it in a group, limited to `CLAUDE_PER_HOUR` requests per person.
+- `/code …` is **owner only**. Claude works in a new git worktree on a branch `pocket/job-<id>`. It can edit files and run `npm test`, and the bridge commits on that branch. It never pushes and never touches your checkout.
+- If the Mac is asleep, requests wait in a queue and are sent when it's back.
+
+Setup: copy `bridge/.env.example` to `bridge/.env`, set a token (`openssl rand -hex 24`), then run `npm run bridge` on the Mac. On the phone, set `MAC_BRIDGE_URL=http://<mac-tailscale-ip>:7777` and the same `BRIDGE_TOKEN` in `.env`.
 
 ## Adding a task
 

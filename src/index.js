@@ -9,6 +9,7 @@ import { createIntentDetector } from './intent/detect.js';
 import { createChat } from './core/chat.js';
 import { createMemory } from './core/memory.js';
 import { createContext } from './core/context.js';
+import { createBridge } from './core/bridge.js';
 import { createQueue } from './core/queue.js';
 import { createRateLimiter } from './core/ratelimit.js';
 import { createMetrics } from './core/metrics.js';
@@ -38,11 +39,13 @@ async function main() {
   const chat = createChat({ llm, memory, config, onGeneration });
 
   const gateway = createWhatsAppGateway({ config, onMessage: (msg) => router.handle(msg) });
+  const bridge = createBridge({ db, config, io: gateway.io });
   const router = createRouter({
     config, db, llm, tasks, commands, detector, chat, memory, context, metrics,
     queue: createQueue({ max: config.queueMax }),
     limiter: createRateLimiter({ perMinute: config.rateLimitPerMin }),
     io: gateway.io,
+    bridge,
   });
 
   if (await llm.health()) {
@@ -61,6 +64,8 @@ async function main() {
   log.info(`Tasks: ${tasks.map((t) => t.name).join(', ')} · Commands: ${[...commands.keys()].map((c) => '/' + c).join(' ')}`);
 
   await gateway.connect();
+  bridge.start();
+  log.info(bridge.enabled ? `🌉 Mac bridge: ${config.bridgeUrl}` : '🌉 Mac bridge off (set MAC_BRIDGE_URL and BRIDGE_TOKEN for /claude and /code)');
 
   const shutdown = (sig) => {
     log.info(`${sig} received, shutting down`);
