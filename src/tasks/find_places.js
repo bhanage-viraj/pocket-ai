@@ -4,8 +4,13 @@
 import { createPlaces, placeKind, formatPlaces } from '../places/index.js';
 import { log } from '../util/log.js';
 
-const KEYWORDS =
-  /\b(near|nearby|nearest|around|close by|paas|pass me|aas ?paas|find|where can i|kahan|kaha|places?|jagah|spots?|recommend|suggest)\b|\b(cafes?|caf[eé]s?|coffee shops?|restaurants?|warung|atms?|pharmac(y|ies)|hospitals?|hotels?|hostels?|supermarkets?|petrol pump|beach(es)?|gyms?|laundry|bars?|pubs?)\b/i;
+// Only messages that name a kind of place (or "places/jagah" + "near") go to the intent model:
+// generic words like "find", "suggest", "recommend" alone are normal chat and must stay fast.
+const PLACE_NOUN =
+  /\b(cafes?|caf[eé]s?|coffee shops?|restaurants?|warung|atms?|pharmac(y|ies)|chemists?|hospitals?|clinics?|hotels?|hostels?|supermarkets?|petrol pumps?|gas stations?|beach(es)?|gyms?|laundry|bars?|pubs?)\b/i;
+const HINGLISH_FOOD = /\b(khane|khana|khaane|khaana)\b[^.?!]{0,30}\b(jagah|kahan|kaha)\b/i;
+const NEAR = /\b(near|nearby|nearest|around|close by|aas ?paas)\b/i;
+const VAGUE_PLACE = /\b(places?|jagah|spots?|food|eat)\b/i;
 
 const PENDING_MS = 15 * 60_000;
 const LOCATION_MS = 2 * 3_600_000;
@@ -58,7 +63,7 @@ export default {
     { text: 'Andheri West mein khane ki achhi jagah batao', fields: { what: 'restaurant', where: 'Andheri West' } },
   ],
 
-  prefilter: (text) => KEYWORDS.test(text),
+  prefilter: (text) => PLACE_NOUN.test(text) || HINGLISH_FOOD.test(text) || (NEAR.test(text) && VAGUE_PLACE.test(text)),
 
   async handle(ctx, fields) {
     const kind = placeKind(fields.what) || 'cafe';

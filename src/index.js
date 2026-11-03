@@ -2,7 +2,8 @@
 import path from 'node:path';
 import { config } from './config.js';
 import { openDb } from './db/index.js';
-import { createLlmClient } from './llm/client.js';
+import { createLlmClient, SLOTS } from './llm/client.js';
+import { buildMessages } from './intent/prompt.js';
 import { loadTasks } from './tasks/index.js';
 import { loadCommands } from './commands/index.js';
 import { createIntentDetector } from './intent/detect.js';
@@ -40,11 +41,12 @@ async function main() {
   let modelName = 'unknown';
   const onGeneration = (kind, result) => metrics.record(kind, modelName, result);
 
-  const memory = createMemory(db, { turns: config.historyTurns });
+  const memory = createMemory(db, { turns: config.historyTurns, maxChars: config.historyMaxChars });
   const context = createContext(db, { groupLines: config.groupContextLines });
   const detector = createIntentDetector({ llm, tasks, prefilter: config.intentPrefilter, onGeneration });
   const chat = createChat({ llm, memory, config, onGeneration });
 
+  const queue = createQueue({ max: config.queueMax });
   const gateway = createWhatsAppGateway({ config, onMessage: (msg) => router.handle(msg) });
   const bridge = createBridge({ db, config, io: gateway.io });
   const settings = createSettings(db);
@@ -52,7 +54,7 @@ async function main() {
   const brief = createBrief({ db, config, io: gateway.io, deadlines, settings });
   const router = createRouter({
     config, db, llm, tasks, commands, detector, chat, memory, context, metrics,
-    queue: createQueue({ max: config.queueMax }),
+    queue,
     limiter: createRateLimiter({ perMinute: config.rateLimitPerMin }),
     io: gateway.io,
     bridge, settings, deadlines, brief,
@@ -83,6 +85,15 @@ async function main() {
     deadlines.tick().catch((e) => log.warn('deadlines tick failed:', e.message));
     brief.tick().catch((e) => log.warn('brief tick failed:', e.message));
   }, 30_000).unref?.();
+  if (config.llmWarmS > 0) {
+    // 1-token request on the intent slot (same cached prefix as real intent prompts, so ~free):
+    // touches every weight, so Android keeps the model in RAM instead of swapping it out.
+    const warm = buildMessages(tasks, 'hi');
+    setInterval(() => {
+      if (queue.size) return;
+      llm.complete({ messages: warm, maxTokens: 1, temperature: 0, slot: SLOTS.intent }).catch(() => {});
+    }, config.llmWarmS * 1000).unref?.();
+  }
   log.info(`⏰ Reminders on (timezone ${config.timezone})`);
   log.info(bridge.enabled ? `🌉 Mac bridge: ${config.bridgeUrl}` : '🌉 Mac bridge off (set MAC_BRIDGE_URL and BRIDGE_TOKEN for /claude and /code)');
 

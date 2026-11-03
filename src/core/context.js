@@ -10,7 +10,7 @@
 // in a group only what was saved in that same group. A DM note never leaks into a group.
 const KEEP_LINES = 120; // per group, on disk (context uses the last few, /summary up to SUMMARY_MAX_LINES)
 
-export function createContext(db, { groupLines = 12, factsPerPerson = 5, lineChars = 200 } = {}) {
+export function createContext(db, { groupLines = 12, factsPerPerson = 5, lineChars = 140 } = {}) {
   db.exec(`
     CREATE TABLE IF NOT EXISTS chat_log (
       id INTEGER PRIMARY KEY,

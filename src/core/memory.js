@@ -1,6 +1,6 @@
 // Per-chat rolling history in SQLite. Stored as user/assistant pairs so roles always alternate
 // (Gemma's chat template expects strict alternation).
-export function createMemory(db, { turns = 6 } = {}) {
+export function createMemory(db, { turns = 6, maxChars = Infinity, msgChars = 500 } = {}) {
   const insert = db.prepare('INSERT INTO messages (chat_id, role, sender, content, ts) VALUES (?,?,?,?,?)');
   const recent = db.prepare('SELECT role, content FROM messages WHERE chat_id = ? ORDER BY id DESC LIMIT ?');
   const clear = db.prepare('DELETE FROM messages WHERE chat_id = ?');
@@ -12,10 +12,19 @@ export function createMemory(db, { turns = 6 } = {}) {
   return {
     /** Last `turns` exchanges, oldest first, as chat messages. */
     history(chatId) {
-      const rows = recent.all(chatId, turns * 2).reverse();
+      const newest = recent.all(chatId, turns * 2);
+      // newest first, until the character budget is used up (prompt reading is the slow part on a phone)
+      const rows = [];
+      let used = 0;
+      for (const r of newest) {
+        const content = r.content.length > msgChars ? r.content.slice(0, msgChars - 1) + '…' : r.content;
+        if (rows.length && used + content.length > maxChars) break;
+        used += content.length;
+        rows.unshift({ role: r.role, content });
+      }
       // drop a leading assistant message if the window cut a pair in half
       while (rows.length && rows[0].role !== 'user') rows.shift();
-      return rows.map((r) => ({ role: r.role, content: r.content }));
+      return rows;
     },
     addExchange(chatId, sender, userText, assistantText) {
       const ts = Date.now();

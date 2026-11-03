@@ -43,13 +43,17 @@ export const config = Object.freeze({
   llmThreads: int(env.LLM_THREADS, 4),
   llmCtx: int(env.LLM_CTX, 4096),
   llmTimeoutMs: int(env.LLM_TIMEOUT_S, 120) * 1000,
-  chatMaxTokens: int(env.CHAT_MAX_TOKENS, 300),
+  chatMaxTokens: int(env.CHAT_MAX_TOKENS, 180),
   chatTemperature: Number(env.CHAT_TEMPERATURE || 0.7),
   intentPrefilter: bool(env.INTENT_PREFILTER, true),
 
-  historyTurns: int(env.HISTORY_TURNS, 6),
+  historyTurns: int(env.HISTORY_TURNS, 4),
+  // the phone reads prompts at ~20 tokens/s: keep the history part of the prompt small
+  historyMaxChars: int(env.HISTORY_MAX_CHARS, 1600),
+  // ping the model every N seconds while idle so Android doesn't swap its weights out (0 = off)
+  llmWarmS: int(env.LLM_WARM_S, 90),
   timezone: detectTimezone(),
-  groupContextLines: int(env.GROUP_CONTEXT_LINES, 12),
+  groupContextLines: int(env.GROUP_CONTEXT_LINES, 6),
   summaryMaxLines: int(env.SUMMARY_MAX_LINES, 40),
 
   // Mac bridge (Claude Code). Empty URL = /claude and /code are off.
