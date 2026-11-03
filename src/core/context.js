@@ -10,7 +10,22 @@
 // in a group only what was saved in that same group. A DM note never leaks into a group.
 const KEEP_LINES = 120; // per group, on disk (context uses the last few, /summary up to SUMMARY_MAX_LINES)
 
-export function createContext(db, { groupLines = 12, factsPerPerson = 5, lineChars = 140 } = {}) {
+// Group chatter is only shown to the model when the message points at it. A small model given
+// "hi" plus six lines about something else will happily comment on that something else.
+const REFERS_TO_CHAT = new RegExp(
+  [
+    String.raw`\b(what|wat|wht) (do|d) (you|u) (think|say|reckon)`, String.raw`\bthoughts\b`, String.raw`\b(agree|disagree)\b`,
+    String.raw`\bwho(?:'s| is)? (right|correct|wrong)\b`, String.raw`\b(above|earlier|discussion|convo|conversation|they said|he said|she said)\b`,
+    String.raw`\b(summari[sz]e|summary|recap|tl;?dr|what did i miss|catch me up)\b`,
+    String.raw`\b(this|that|these|those|it)\b.*\?`, String.raw`\b(explain|clarify)\b`, String.raw`\bsettle\b`,
+    // Hinglish
+    String.raw`\b(kya bolta|kya kehta|kya lagta|tu bata|tum batao|aap batao|sahi kaun|kaun sahi|upar|ye kya|yeh kya|isme|iska|uska|unka)\b`,
+  ].join('|'),
+  'i',
+);
+export const refersToChat = (text = '') => REFERS_TO_CHAT.test(text);
+
+export function createContext(db, { groupLines = 12, groupMaxMs = 30 * 60_000, factsPerPerson = 5, lineChars = 140 } = {}) {
   db.exec(`
     CREATE TABLE IF NOT EXISTS chat_log (
       id INTEGER PRIMARY KEY,
@@ -68,13 +83,17 @@ export function createContext(db, { groupLines = 12, factsPerPerson = 5, lineCha
       }
     },
 
-    /** Context block (string, '' if nothing useful). `since` = ts of the bot's last reply in this chat. */
-    build({ chatId, isGroup, sender, msgId, since = 0 }) {
+    /**
+     * Context block (string, '' if nothing useful). `since` = ts of the bot's last reply in this chat.
+     * Group lines only come in when `text` refers to the conversation, and only recent ones.
+     */
+    build({ chatId, isGroup, sender, msgId, since = 0, text = '' }) {
       const parts = [];
       const speakers = new Map(); // number -> name
 
-      if (isGroup && groupLines > 0) {
-        const lines = linesSince.all(chatId, since, msgId ?? '', groupLines).reverse();
+      if (isGroup && groupLines > 0 && refersToChat(text)) {
+        const from = groupMaxMs > 0 ? Math.max(since, Date.now() - groupMaxMs) : since;
+        const lines = linesSince.all(chatId, from, msgId ?? '', groupLines).reverse();
         if (lines.length) {
           parts.push('Recent messages in this group (not addressed to you):');
           for (const l of lines) {

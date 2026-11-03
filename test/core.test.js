@@ -61,6 +61,16 @@ test('memory keeps last N exchanges, alternating roles', () => {
   assert.equal(mem.history('c2').length, 2);
 });
 
+test('memory forgets exchanges older than ttlMs', () => {
+  const db = openDb(':memory:');
+  const mem = createMemory(db, { turns: 4, ttlMs: 3 * 3600e3 });
+  mem.addExchange('c1', 'n', 'water safety talk', 'be careful');
+  db.prepare('UPDATE messages SET ts = ?').run(Date.now() - 4 * 3600e3);
+  assert.deepEqual(mem.history('c1'), [], 'a chat quiet for hours starts fresh');
+  mem.addExchange('c1', 'n', 'hi', 'hey!');
+  assert.deepEqual(mem.history('c1').map((m) => m.content), ['hi', 'hey!']);
+});
+
 test('text triggers are whole-word and case-insensitive', () => {
   const triggers = ['/ai', 'hey pocket'];
   assert.deepEqual(matchTextTrigger('Hey Pocket, what is RAG?', triggers), { trigger: 'hey pocket', rest: 'what is RAG?' });

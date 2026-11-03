@@ -50,10 +50,14 @@ export const config = Object.freeze({
   historyTurns: int(env.HISTORY_TURNS, 4),
   // the phone reads prompts at ~20 tokens/s: keep the history part of the prompt small
   historyMaxChars: int(env.HISTORY_MAX_CHARS, 1600),
+  // forget the chat history after this many minutes of quiet (0 = never)
+  historyTtlMin: int(env.HISTORY_TTL_MIN, 180),
   // ping the model every N seconds while idle so Android doesn't swap its weights out (0 = off)
   llmWarmS: int(env.LLM_WARM_S, 90),
   timezone: detectTimezone(),
   groupContextLines: int(env.GROUP_CONTEXT_LINES, 6),
+  // ...only from the last N minutes, and only when the message refers to the chat ("what do you think?")
+  groupContextMaxMin: int(env.GROUP_CONTEXT_MAX_MIN, 30),
   summaryMaxLines: int(env.SUMMARY_MAX_LINES, 40),
 
   // Mac bridge (Claude Code). Empty URL = /claude and /code are off.

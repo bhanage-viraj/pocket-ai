@@ -320,7 +320,7 @@ export function createRouter(deps) {
             return answer == null ? (heard || null) : heard + answer;
           }
           let extra = context?.build({
-            chatId, isGroup, sender, msgId: ctx.msg.id, since: memory.lastReplyTs(chatId),
+            chatId, isGroup, sender, msgId: ctx.msg.id, since: memory.lastReplyTs(chatId), text,
           }) ?? '';
           const lateNote = late ? '_(sorry for the late reply, I was offline)_\n' : '';
           // live info: weather/currency answered by code, search results handed to the model

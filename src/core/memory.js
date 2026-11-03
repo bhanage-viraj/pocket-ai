@@ -1,8 +1,10 @@
 // Per-chat rolling history in SQLite. Stored as user/assistant pairs so roles always alternate
 // (Gemma's chat template expects strict alternation).
-export function createMemory(db, { turns = 6, maxChars = Infinity, msgChars = 500 } = {}) {
+// ttlMs: exchanges older than this are left out of the prompt, so a chat that went quiet for a few
+// hours starts fresh instead of the model riffing on an old topic (they stay on disk until pruned).
+export function createMemory(db, { turns = 6, maxChars = Infinity, msgChars = 500, ttlMs = 0 } = {}) {
   const insert = db.prepare('INSERT INTO messages (chat_id, role, sender, content, ts) VALUES (?,?,?,?,?)');
-  const recent = db.prepare('SELECT role, content FROM messages WHERE chat_id = ? ORDER BY id DESC LIMIT ?');
+  const recent = db.prepare('SELECT role, content FROM messages WHERE chat_id = ? AND ts > ? ORDER BY id DESC LIMIT ?');
   const clear = db.prepare('DELETE FROM messages WHERE chat_id = ?');
   const lastReply = db.prepare("SELECT MAX(ts) AS ts FROM messages WHERE chat_id = ? AND role = 'assistant'");
   const prune = db.prepare(
@@ -12,7 +14,7 @@ export function createMemory(db, { turns = 6, maxChars = Infinity, msgChars = 50
   return {
     /** Last `turns` exchanges, oldest first, as chat messages. */
     history(chatId) {
-      const newest = recent.all(chatId, turns * 2);
+      const newest = recent.all(chatId, ttlMs > 0 ? Date.now() - ttlMs : 0, turns * 2);
       // newest first, until the character budget is used up (prompt reading is the slow part on a phone)
       const rows = [];
       let used = 0;

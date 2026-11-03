@@ -41,8 +41,10 @@ async function main() {
   let modelName = 'unknown';
   const onGeneration = (kind, result) => metrics.record(kind, modelName, result);
 
-  const memory = createMemory(db, { turns: config.historyTurns, maxChars: config.historyMaxChars });
-  const context = createContext(db, { groupLines: config.groupContextLines });
+  const memory = createMemory(db, {
+    turns: config.historyTurns, maxChars: config.historyMaxChars, ttlMs: config.historyTtlMin * 60_000,
+  });
+  const context = createContext(db, { groupLines: config.groupContextLines, groupMaxMs: config.groupContextMaxMin * 60_000 });
   const detector = createIntentDetector({ llm, tasks, prefilter: config.intentPrefilter, onGeneration });
   const chat = createChat({ llm, memory, config, onGeneration });
 

@@ -11,7 +11,9 @@ export function createChat({ llm, memory, config, onGeneration = () => {} }) {
      * prefix (system + history) stays the same and llama-server can reuse it.
      */
     async reply({ chatId, isGroup, userContent, context = '' }) {
-      const last = context ? `(Context, use it if relevant, don't repeat it)\n${context}\n\n${userContent}` : userContent;
+      const last = context
+        ? `(Background only. Reply to the message below; mention the background only if the message asks about it.)\n${context}\n\n---\n${userContent}`
+        : userContent;
       const messages = [
         { role: 'system', content: chatSystemPrompt({ isGroup }) },
         ...memory.history(chatId),

@@ -24,7 +24,7 @@ test('group context: lines since last reply, without the current message', async
   ctx.observe(gmsg('a', FRIEND, 'Rahul', 'anyone up for goa trip?'));
   ctx.observe(gmsg('b', OWNER, 'Viraj', 'only if its in december'));
   ctx.observe(gmsg('c', OWNER, 'Viraj', '@Pocket what do you think?'));
-  const out = ctx.build({ chatId: G, isGroup: true, sender: { number: OWNER, name: 'Viraj' }, msgId: 'c' });
+  const out = ctx.build({ chatId: G, isGroup: true, sender: { number: OWNER, name: 'Viraj' }, msgId: 'c', text: '@Pocket what do you think?' });
   assert.match(out, /\[Rahul\]: anyone up for goa trip\?/);
   assert.match(out, /\[Viraj\]: only if its in december/);
   assert.doesNotMatch(out, /what do you think/);
@@ -35,11 +35,23 @@ test('group context: lines since last reply, without the current message', async
 test('group context is capped, and 0 turns it off', async () => {
   const { ctx } = await setup({ groupLines: 3 });
   for (let i = 0; i < 10; i++) ctx.observe(gmsg(`m${i}`, FRIEND, 'Rahul', `line ${i}`));
-  const out = ctx.build({ chatId: G, isGroup: true, sender: { number: FRIEND, name: 'Rahul' } });
+  const out = ctx.build({ chatId: G, isGroup: true, sender: { number: FRIEND, name: 'Rahul' }, text: 'thoughts?' });
   assert.deepEqual(out.match(/line \d/g), ['line 7', 'line 8', 'line 9']);
   const off = (await setup({ groupLines: 0 })).ctx;
   off.observe(gmsg('x', FRIEND, 'Rahul', 'hello'));
-  assert.equal(off.build({ chatId: G, isGroup: true, sender: { number: FRIEND } }), '');
+  assert.equal(off.build({ chatId: G, isGroup: true, sender: { number: FRIEND }, text: 'thoughts?' }), '');
+});
+
+test('group context only when the message refers to the chat, and only recent lines', async () => {
+  const { db, ctx } = await setup({ groupMaxMs: 30 * 60_000 });
+  ctx.observe(gmsg('a', FRIEND, 'Rahul', 'is the lake water safe to swim in?'));
+  const who = { chatId: G, isGroup: true, sender: { number: OWNER, name: 'Viraj' } };
+  assert.equal(ctx.build({ ...who, text: '/ai hi' }), '', 'a greeting must not drag in the group chatter');
+  assert.equal(ctx.build({ ...who, text: 'tell me a joke' }), '');
+  assert.match(ctx.build({ ...who, text: 'what do you think?' }), /lake water/);
+  assert.match(ctx.build({ ...who, text: 'bhai tu bata, sahi kaun hai' }), /lake water/);
+  db.prepare('UPDATE chat_log SET ts = ?').run(Date.now() - 2 * 3600e3);
+  assert.equal(ctx.build({ ...who, text: 'what do you think?' }), '', 'old chatter is dropped');
 });
 
 test('facts: DM sees all of the person\'s notes, a group only that group\'s', async () => {
@@ -53,7 +65,7 @@ test('facts: DM sees all of the person\'s notes, a group only that group\'s', as
   assert.match(dm, /trip organiser/);
 
   ctx.observe(gmsg('a', FRIEND, 'Rahul', 'what should we eat'));
-  const grp = ctx.build({ chatId: G, isGroup: true, sender: { number: OWNER, name: 'Viraj' } });
+  const grp = ctx.build({ chatId: G, isGroup: true, sender: { number: OWNER, name: 'Viraj' }, text: 'what do you think?' });
   assert.match(grp, /trip organiser/);
   assert.match(grp, /Rahul asked you to remember: Rahul is vegetarian/);
   assert.doesNotMatch(grp, /birthday/, 'a DM note must not leak into a group');
